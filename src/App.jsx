@@ -322,24 +322,16 @@ function ProductGlance() {
 }
 
 /* --------------- Option 4: floating summary widget + sheet --------------- */
-function Spark({ className = '' }) {
-  return (
-    <svg className={className} width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-      <path fill="currentColor" d="M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z" />
-    </svg>
-  )
-}
-
-const WIDGET_TEASER = 'Fast, compact GaN charger that powers up to 3 devices at once, including laptops and phones.'
+const WIDGET_TEASER = 'Fast GaN charger with 3-device charging, laptop support and travel-ready design.'
 
 function SummaryWidget({ onOpen, onDismiss }) {
   const streamedRef = useRef(false)
   return (
     <div className="sumw" role="button" tabIndex={0} onClick={onOpen}>
+      <img className="ai-glow" src="/icons/ai-glow.svg" alt="" aria-hidden />
       <div className="sumw-top">
         <span className="sumw-label">
-          <Spark className="sumw-spark" />
-          View product summary
+          Product summary
           <Chev className="sumw-chev" />
         </span>
         <button
@@ -359,9 +351,9 @@ function SummarySheet({ open, onClose }) {
   return (
     <div className={`cart-overlay sum-overlay${open ? ' open' : ''}`} onClick={onClose}>
       <div className="cart-sheet sum-sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sum-handle" />
+        <img className="ai-glow" src="/icons/ai-glow.svg" alt="" aria-hidden />
         <div className="sum-head">
-          <span className="psum-title">Product summary</span>
+          <span className="sum-title">Product summary</span>
           <span className="psum-ai">Summarised by AI</span>
         </div>
         <ul className="psum-list">
@@ -495,9 +487,7 @@ function Trustmarkers() {
 }
 
 /* ----------------------------- Product details ----------------------------- */
-const GLANCE_TEASER = 'Fast, compact GaN charger that powers up to 3 devices simultaneously, including laptops and smart...'
-
-// Reveals text one character at a time (15ms/char) the first time it scrolls
+// Reveals text one character at a time the first time it scrolls
 // into view. The trailing 10 characters fade in (10% -> 100% opacity); older
 // characters are already fully opaque. `streamedRef` remembers completion so
 // re-showing the node (e.g. re-collapsing an accordion) doesn't replay it.
@@ -581,10 +571,11 @@ function StreamingBullets({ bullets, streamedRef, staticCount = 1 }) {
       streamedRef.current = true
       return
     }
-    const id = setTimeout(() => setTick((t) => t + 1), 15)
+    const id = setTimeout(() => setTick((t) => t + 1), 16)
     return () => clearTimeout(id)
   }, [tick, total, streamedRef])
 
+  const FADE = 9 // trailing chars that fade 10% -> 100%
   let offset = 0
   return (
     <ul className="psum-list" ref={elRef}>
@@ -595,15 +586,18 @@ function StreamingBullets({ bullets, streamedRef, staticCount = 1 }) {
         const start = offset
         offset += b.length
         const revealed = tick < 0 ? 0 : Math.min(Math.max(tick - start, 0), b.length)
+        // Only the trailing FADE chars need per-char opacity spans; everything
+        // before them is already fully opaque and renders as one plain string.
+        const solid = Math.min(Math.max(tick - start - FADE + 1, 0), revealed)
         return (
           <li key={bi} className={revealed > 0 ? '' : 'psum-li-pending'}>
             {revealed > 0 && <SumCheck />}
             <span>
-              {b.split('').map((ch, i) => {
-                if (i >= revealed) return null
-                const distance = tick - (start + i)
-                const opacity = distance >= 9 ? 1 : 0.1 + (0.9 * distance) / 9
-                return <span key={i} style={{ opacity }}>{ch}</span>
+              {b.slice(0, solid)}
+              {b.slice(solid, revealed).split('').map((ch, i) => {
+                const distance = tick - (start + solid + i)
+                const opacity = distance >= FADE ? 1 : 0.1 + (0.9 * distance) / FADE
+                return <span key={solid + i} style={{ opacity }}>{ch}</span>
               })}
             </span>
           </li>
@@ -630,45 +624,37 @@ function DetailsAiBox({ variant }) {
       </div>
     )
   }
+  // Default and expanded share ONE content block (same bullets + "Good to
+  // know"), so the two states feel uniform. Collapsing just clips the height
+  // and fades the overflow; expanding animates the height open.
   return (
     <div className="pdet-ai">
       <button className="pdet-ai-head pdet-ai-toggle" onClick={() => setOpen((o) => !o)}>
         <span className="pdet-ai-title">Summarised by AI</span>
         <Chev className={`pdet-ai-chev${open ? ' up' : ''}`} />
       </button>
-      {!open && (
-        <div className="pdet-ai-collapsed">
+      <motion.div
+        className={`pdet-ai-reveal${open ? '' : ' collapsed'}`}
+        initial={false}
+        animate={{ height: open ? 'auto' : 64 }}
+        transition={MOTION}
+        style={{ overflow: 'hidden' }}
+      >
+        <div className="pdet-ai-inner">
           <StreamingBullets bullets={GLANCE_BULLETS} streamedRef={streamedRef} staticCount={1} />
-        </div>
-      )}
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            className="pdet-ai-expand"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={MOTION}
-          >
-            <ul className="psum-list">
-              {GLANCE_BULLETS.map((b) => (
-                <li key={b}><SumCheck />{b}</li>
-              ))}
-            </ul>
-            <div className="psum-know">
-              <p className="psum-know-h">Good to know</p>
-              <div className="psum-know-row">
-                <svg className="psum-info" width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8"/>
-                  <path stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" d="M12 11v5"/>
-                  <circle cx="12" cy="7.7" r="1.1" fill="currentColor"/>
-                </svg>
-                <span>Does not support 240V power supply.</span>
-              </div>
+          <div className="psum-know">
+            <p className="psum-know-h">Good to know</p>
+            <div className="psum-know-row">
+              <svg className="psum-info" width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8"/>
+                <path stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" d="M12 11v5"/>
+                <circle cx="12" cy="7.7" r="1.1" fill="currentColor"/>
+              </svg>
+              <span>Does not support 240V power supply.</span>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      </motion.div>
     </div>
   )
 }

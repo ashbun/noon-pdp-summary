@@ -423,26 +423,32 @@ input, button, textarea, select { font-family: inherit; }
 .psum-ask-chev { width: 16px; height: 16px; color: #a13fe0; }
 .psum-ask-chev path { stroke: #ae3ee7; }
 
+/* Soft blue->purple glow graphic anchored to the top edge (used by the option
+   4 widget and its bottom sheet). Flipped vertically to match the Figma. */
+.ai-glow {
+  position: absolute; left: -20%; top: -34px; width: 140%; height: 120px;
+  transform: scaleY(-1); pointer-events: none; z-index: 0;
+}
+
 /* --------- Option 4: floating summary widget --------- */
 .sumw {
-  position: relative; z-index: 3;
+  position: relative; z-index: 3; overflow: hidden;
   margin: -58px 0 2px; /* pull up so it floats over the gallery bottom */
   padding: 10px 12px 11px;
   border-radius: 12px;
-  border: 1px solid rgba(143, 79, 224, .18);
-  background: rgba(247, 242, 255, .82);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 8px 24px rgba(65, 70, 206, .12);
+  border: 1px solid #fff;
+  background: linear-gradient(180deg, rgba(255,255,255,.7) 0%, #fff 67%);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  box-shadow: 0 8px 24px rgba(65, 70, 206, .10);
   cursor: pointer;
 }
-.sumw-top { display: flex; align-items: center; justify-content: space-between; }
+.sumw-top { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; }
 .sumw-label {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: 4px;
   font-size: 14px; font-weight: 700; letter-spacing: -0.14px;
   background: linear-gradient(90deg, #4146ce, #bf3deb);
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
 }
-.sumw-spark { color: #a13fe0; }
 .sumw-chev { width: 16px; height: 16px; color: #a13fe0; }
 .sumw-chev path { stroke: #ae3ee7; }
 .sumw-x {
@@ -450,23 +456,29 @@ input, button, textarea, select { font-family: inherit; }
   background: none; color: var(--ink-500); display: grid; place-items: center;
 }
 .sumw-teaser {
+  position: relative; z-index: 1;
   margin: 4px 0 0; font-size: 13px; font-weight: 400; line-height: 20px;
   color: var(--ink-700); letter-spacing: -0.1px;
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
 
 /* --------- Option 4: product-summary bottom sheet --------- */
-.sum-sheet { max-height: min(560px, calc(100% - 24px)); padding: 8px 16px 16px; }
-.sum-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 4px auto 12px; }
-.sum-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
-.sum-sheet .psum-list { margin-top: 6px; }
-.sum-sheet .psum-list li { padding: 0; }
-.sum-sheet .psum-know { padding: 0; }
-.sum-sheet .psum-know-h { padding: 6px 0 0; }
-.sum-sheet .psum-know-row { padding: 0; }
+.sum-sheet { position: relative; max-height: min(560px, calc(100% - 24px)); padding: 16px 16px 12px; }
+.sum-head { position: relative; z-index: 1; display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.sum-title {
+  font-size: 18px; font-weight: 700; line-height: 24px; letter-spacing: -0.15px;
+  background: linear-gradient(90deg, #4146ce, #bf3deb);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+}
+.sum-sheet .psum-list { position: relative; z-index: 1; margin-top: 0; gap: 12px; }
+.sum-sheet .psum-list li { padding: 0; font-size: 14px; color: var(--ink-900); }
+.sum-sheet .psum-know { position: relative; z-index: 1; margin-top: 20px; padding: 0; gap: 6px; }
+.sum-sheet .psum-know-h { padding: 0; font-size: 14px; }
+.sum-sheet .psum-know-row { padding: 0; font-size: 14px; }
 .sum-okbtn {
-  margin-top: 16px; width: 100%; padding: 14px; border: 0; border-radius: 12px; cursor: pointer;
-  background: #16171c; color: #fff; font-family: inherit; font-size: 15px; font-weight: 700; letter-spacing: -0.15px;
+  position: relative; z-index: 1;
+  margin-top: 24px; width: 100%; min-height: 48px; padding: 14px 16px; border: 0; border-radius: 10px; cursor: pointer;
+  background: #000; color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0;
 }
 
 /* --------- Payment offers --------- */
@@ -648,7 +660,7 @@ input, button, textarea, select { font-family: inherit; }
 .section-h + .pdet-ai { margin-top: -4px; }
 .details { padding-bottom: 8px; }
 .pdet-ai {
-  display: flex; flex-direction: column; gap: 0px; padding: 12px 0; margin-bottom: 12px; border-radius: 12px;
+  display: flex; flex-direction: column; gap: 6px; padding: 12px 0; margin-bottom: 12px; border-radius: 12px;
   background: linear-gradient(90deg, rgba(65,70,206,.04), rgba(191,61,235,.04));
 }
 .pdet-ai-head { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
@@ -656,19 +668,15 @@ input, button, textarea, select { font-family: inherit; }
 .pdet-ai-title { font-size: 14px; font-weight: 700; letter-spacing: -0.14px; background: linear-gradient(90deg, #4146ce, #bf3deb); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
 .pdet-ai-chev { width: 20px; height: 20px; color: #8f4fe0; transform: rotate(90deg); transition: transform .18s ease; }
 .pdet-ai-chev.up { transform: rotate(-90deg); }
-.pdet-ai-teaser {
-  margin: 0; padding: 4px 12px 0; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-700); letter-spacing: -0.1px;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+/* Same content in default & expanded — collapsed just clips + fades the tail. */
+.pdet-ai-reveal.collapsed {
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 20px), transparent 100%);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 20px), transparent 100%);
 }
-/* Option 3 collapsed: show ~2.5 streaming bullets, fade the rest out. */
-.pdet-ai-collapsed {
-  max-height: 82px; overflow: hidden;
-  -webkit-mask-image: linear-gradient(180deg, #000 58%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 58%, transparent 100%);
-}
-.pdet-ai-collapsed .psum-list { margin-top: 4px; }
+.pdet-ai-inner { display: flex; flex-direction: column; gap: 12px; }
+.pdet-ai-inner .psum-list { margin-top: 0; }
+.pdet-ai-inner .psum-know { margin-top: 0; }
 .psum-li-pending { min-height: 20px; }
-.pdet-ai-expand { overflow: hidden; display: flex; flex-direction: column; gap: 0px; }
 .accordion { margin-bottom: 8px; background: var(--surface); border-radius: 10px; overflow: hidden; }
 .accordion-head {
   display: flex; align-items: center; justify-content: space-between; width: 100%;

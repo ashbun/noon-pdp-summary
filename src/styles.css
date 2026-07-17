@@ -599,6 +599,7 @@ input, button, textarea, select { font-family: inherit; }
 
 /* --------------------------- Product details --------------------------- */
 .section-h { margin: 0 0 14px; font-size: 15px; font-weight: 700; color: var(--ink); }
+.section-h + .pdet-ai { margin-top: -4px; }
 .details { padding-bottom: 8px; }
 .pdet-ai {
   display: flex; flex-direction: column; gap: 0px; padding: 12px 0; margin-bottom: 12px; border-radius: 12px;

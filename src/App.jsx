@@ -283,7 +283,7 @@ const GLANCE_BULLETS = [
 function SumCheck() {
   return (
     <svg className="psum-check" width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-      <path fill="none" stroke="#8f4fe0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M3.2 8.4l3 3 6.6-7"/>
+      <path fill="none" stroke="#9FA2EF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M3.2 8.4l3 3 6.6-7"/>
     </svg>
   )
 }
@@ -291,7 +291,7 @@ function ProductGlance() {
   return (
     <section className="psum">
       <div className="psum-head">
-        <span className="psum-title">Product summary</span>
+        <span className="psum-title psum-title--shimmer">Product summary</span>
         <span className="psum-ai">Summarised by AI</span>
       </div>
       <ul className="psum-list">
@@ -612,7 +612,7 @@ function DetailsAiBox({ variant }) {
   const streamedRef = useRef(false)
   if (variant === 2) {
     return (
-      <div className="pdet-ai">
+      <div className="pdet-ai pdet-ai--static">
         <div className="pdet-ai-head">
           <span className="pdet-ai-title">Summarised by AI</span>
         </div>
@@ -628,7 +628,7 @@ function DetailsAiBox({ variant }) {
   // know"), so the two states feel uniform. Collapsing just clips the height
   // and fades the overflow; expanding animates the height open.
   return (
-    <div className="pdet-ai">
+    <div className={`pdet-ai${open ? ' pdet-ai--open' : ''}`}>
       <button className="pdet-ai-head pdet-ai-toggle" onClick={() => setOpen((o) => !o)}>
         <span className="pdet-ai-title">Summarised by AI</span>
         <Chev className={`pdet-ai-chev${open ? ' up' : ''}`} />

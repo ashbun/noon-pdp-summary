@@ -1,0 +1,74 @@
+{
+  "version": 2,
+  "tokens": {
+    "colors": {
+      "accent": {
+        "blue": { "value": "#0057ff", "variable": "--blue" },
+        "blue2": { "value": "#0F61FF", "variable": "--blue2" },
+        "blue-600": { "value": "#0076ff", "variable": "--blue-600" },
+        "blue-tint": { "value": "#eff7ff", "variable": "--blue-tint" },
+        "blue-100": { "value": "#e1efff", "variable": "--blue-100" }
+      },
+      "ink": {
+        "ink": { "value": "#101628", "variable": "--ink" },
+        "ink-900": { "value": "#1d2539", "variable": "--ink-900" },
+        "ink-800": { "value": "#343d54", "variable": "--ink-800" },
+        "ink-700": { "value": "#475067", "variable": "--ink-700" },
+        "ink-600": { "value": "#666d85", "variable": "--ink-600" },
+        "ink-500": { "value": "#989fb3", "variable": "--ink-500" }
+      },
+      "surface": {
+        "line": { "value": "#eaecf0", "variable": "--line" },
+        "line-2": { "value": "#f2f3f7", "variable": "--line-2" },
+        "line-3": { "value": "#f3f5f7", "variable": "--line-3" },
+        "surface": { "value": "#f9f9fb", "variable": "--surface" },
+        "white": { "value": "#fff", "variable": "--white" }
+      },
+      "status": {
+        "green": { "value": "#02a31e", "variable": "--green" },
+        "emerald": { "value": "#1f7a74", "variable": "--emerald" },
+        "emerald-800": { "value": "#13645f", "variable": "--emerald-800" },
+        "yellow": { "value": "#feee00", "variable": "--yellow" },
+        "navy": { "value": "#2122b8", "variable": "--navy" },
+        "red": { "value": "#e01e2b", "variable": "--red" }
+      }
+    },
+    "radii": {
+      "radius": { "value": "12px", "variable": "--radius" }
+    }
+  },
+  "components": {
+    "DetailsAiBox": {
+      "props": {
+        "variant": {
+          "type": "enum",
+          "values": [2, 3],
+          "description": "AI product-summary layout: 2 = always-open bullet list, 3 = collapsible with streaming default"
+        }
+      }
+    },
+    "SummarySheet": {
+      "props": {
+        "open": {
+          "type": "boolean",
+          "description": "Whether the option-4 product-summary bottom sheet is open"
+        }
+      },
+      "state": {
+        "open": { "type": "boolean" }
+      }
+    },
+    "SummaryWidget": {
+      "description": "Option-4 floating 'Product summary' entry-point widget over the gallery"
+    },
+    "TopNav": {
+      "props": {
+        "state": {
+          "type": "enum",
+          "values": [1, 2],
+          "description": "1 = back + search icon + wishlist + share, 2 = back + expanded search pill + share"
+        }
+      }
+    }
+  }
+}

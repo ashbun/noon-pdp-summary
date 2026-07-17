@@ -423,6 +423,52 @@ input, button, textarea, select { font-family: inherit; }
 .psum-ask-chev { width: 16px; height: 16px; color: #a13fe0; }
 .psum-ask-chev path { stroke: #ae3ee7; }
 
+/* --------- Option 4: floating summary widget --------- */
+.sumw {
+  position: relative; z-index: 3;
+  margin: -58px 0 2px; /* pull up so it floats over the gallery bottom */
+  padding: 10px 12px 11px;
+  border-radius: 12px;
+  border: 1px solid rgba(143, 79, 224, .18);
+  background: rgba(247, 242, 255, .82);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(65, 70, 206, .12);
+  cursor: pointer;
+}
+.sumw-top { display: flex; align-items: center; justify-content: space-between; }
+.sumw-label {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 14px; font-weight: 700; letter-spacing: -0.14px;
+  background: linear-gradient(90deg, #4146ce, #bf3deb);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+}
+.sumw-spark { color: #a13fe0; }
+.sumw-chev { width: 16px; height: 16px; color: #a13fe0; }
+.sumw-chev path { stroke: #ae3ee7; }
+.sumw-x {
+  flex: 0 0 auto; width: 22px; height: 22px; border: 0; padding: 0; cursor: pointer;
+  background: none; color: var(--ink-500); display: grid; place-items: center;
+}
+.sumw-teaser {
+  margin: 4px 0 0; font-size: 13px; font-weight: 400; line-height: 20px;
+  color: var(--ink-700); letter-spacing: -0.1px;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* --------- Option 4: product-summary bottom sheet --------- */
+.sum-sheet { max-height: min(560px, calc(100% - 24px)); padding: 8px 16px 16px; }
+.sum-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 4px auto 12px; }
+.sum-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+.sum-sheet .psum-list { margin-top: 6px; }
+.sum-sheet .psum-list li { padding: 0; }
+.sum-sheet .psum-know { padding: 0; }
+.sum-sheet .psum-know-h { padding: 6px 0 0; }
+.sum-sheet .psum-know-row { padding: 0; }
+.sum-okbtn {
+  margin-top: 16px; width: 100%; padding: 14px; border: 0; border-radius: 12px; cursor: pointer;
+  background: #16171c; color: #fff; font-family: inherit; font-size: 15px; font-weight: 700; letter-spacing: -0.15px;
+}
+
 /* --------- Payment offers --------- */
 .pay-offers { display: flex; flex-direction: column; gap: 12px; padding: 12px 0; }
 .po-title { margin: 0 14px; font-size: 15px; font-weight: 700; line-height: 17px; color: #101628; letter-spacing: -0.28px; }
@@ -614,6 +660,14 @@ input, button, textarea, select { font-family: inherit; }
   margin: 0; padding: 4px 12px 0; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-700); letter-spacing: -0.1px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
+/* Option 3 collapsed: show ~2.5 streaming bullets, fade the rest out. */
+.pdet-ai-collapsed {
+  max-height: 82px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 58%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 58%, transparent 100%);
+}
+.pdet-ai-collapsed .psum-list { margin-top: 4px; }
+.psum-li-pending { min-height: 20px; }
 .pdet-ai-expand { overflow: hidden; display: flex; flex-direction: column; gap: 0px; }
 .accordion { margin-bottom: 8px; background: var(--surface); border-radius: 10px; overflow: hidden; }
 .accordion-head {

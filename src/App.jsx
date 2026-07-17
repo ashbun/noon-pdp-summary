@@ -23,6 +23,16 @@ export default function App() {
 
 function PDP() {
   const [summaryOption, setSummaryOption] = useState(1)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [widgetDismissed, setWidgetDismissed] = useState(false)
+
+  // Switching design options resets the option-4 widget/sheet state so the
+  // widget (and its streaming teaser) plays fresh each time it's re-selected.
+  function selectOption(n) {
+    setSummaryOption(n)
+    setSheetOpen(false)
+    setWidgetDismissed(false)
+  }
 
   // Scroll-linked gallery: the product image shrinks as the page scrolls,
   // so the content sliding over the pinned gallery feels more interactive.
@@ -33,10 +43,16 @@ function PDP() {
 
   return (
     <div className="pdp">
-      <StatusBar summaryOption={summaryOption} onSummaryOption={setSummaryOption} />
+      <StatusBar summaryOption={summaryOption} onSummaryOption={selectOption} />
       <div className="pdp-scroll" ref={scrollRef}>
         <Gallery imgScale={imgScale} imgOpacity={imgOpacity} />
         <div className="pdp-sections">
+          {summaryOption === 4 && !widgetDismissed && (
+            <SummaryWidget
+              onOpen={() => setSheetOpen(true)}
+              onDismiss={() => setWidgetDismissed(true)}
+            />
+          )}
           <MainInfo />
           <Delivery />
           {summaryOption === 1 && <ProductGlance />}
@@ -50,6 +66,9 @@ function PDP() {
         </div>
       </div>
       <BottomNav />
+      {summaryOption === 4 && (
+        <SummarySheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+      )}
     </div>
   )
 }
@@ -117,7 +136,7 @@ function StatusBar({ summaryOption, onSummaryOption }) {
     <div className="pdp-topbar">
       <TopNav state={1} />
       <div className="summary-toggle" role="group" aria-label="Product summary design">
-        {[1, 2, 3].map((n) => (
+        {[1, 2, 3, 4].map((n) => (
           <button
             key={n}
             className={`summary-toggle-btn${summaryOption === n ? ' on' : ''}`}
@@ -302,6 +321,71 @@ function ProductGlance() {
   )
 }
 
+/* --------------- Option 4: floating summary widget + sheet --------------- */
+function Spark({ className = '' }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+      <path fill="currentColor" d="M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z" />
+    </svg>
+  )
+}
+
+const WIDGET_TEASER = 'Fast, compact GaN charger that powers up to 3 devices at once, including laptops and phones.'
+
+function SummaryWidget({ onOpen, onDismiss }) {
+  const streamedRef = useRef(false)
+  return (
+    <div className="sumw" role="button" tabIndex={0} onClick={onOpen}>
+      <div className="sumw-top">
+        <span className="sumw-label">
+          <Spark className="sumw-spark" />
+          View product summary
+          <Chev className="sumw-chev" />
+        </span>
+        <button
+          className="sumw-x"
+          aria-label="Dismiss summary"
+          onClick={(e) => { e.stopPropagation(); onDismiss() }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </div>
+      <StreamingTeaser text={WIDGET_TEASER} streamedRef={streamedRef} className="sumw-teaser" />
+    </div>
+  )
+}
+
+function SummarySheet({ open, onClose }) {
+  return (
+    <div className={`cart-overlay sum-overlay${open ? ' open' : ''}`} onClick={onClose}>
+      <div className="cart-sheet sum-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sum-handle" />
+        <div className="sum-head">
+          <span className="psum-title">Product summary</span>
+          <span className="psum-ai">Summarised by AI</span>
+        </div>
+        <ul className="psum-list">
+          {GLANCE_BULLETS.map((b) => (
+            <li key={b}><SumCheck />{b}</li>
+          ))}
+        </ul>
+        <div className="psum-know">
+          <p className="psum-know-h">Good to know</p>
+          <div className="psum-know-row">
+            <svg className="psum-info" width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+              <path stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" d="M12 11v5" />
+              <circle cx="12" cy="7.7" r="1.1" fill="currentColor" />
+            </svg>
+            <span>Does not support 240V power supply.</span>
+          </div>
+        </div>
+        <button className="sum-okbtn" onClick={onClose}>Ok, Got it</button>
+      </div>
+    </div>
+  )
+}
+
 /* ------------------------------ Payment offers ----------------------------- */
 const PAY_OFFERS = [
   { img: '/icons/pay-noon-card.png', kind: 'card', inline: true },
@@ -463,6 +547,72 @@ function StreamingTeaser({ text, streamedRef, className }) {
   )
 }
 
+// Streams a bulleted summary the first time it scrolls into view. The first
+// `staticCount` bullets are shown immediately; every bullet after that reveals
+// character-by-character (trailing 9 chars fade 10%->100%), one bullet flowing
+// into the next. Each bullet's check icon appears once its first char lands.
+// `streamedRef` remembers completion so re-collapsing doesn't replay it.
+function StreamingBullets({ bullets, streamedRef, staticCount = 1 }) {
+  const total = bullets.slice(staticCount).reduce((n, b) => n + b.length, 0)
+  const [tick, setTick] = useState(streamedRef.current ? total + 9 : -1)
+  const elRef = useRef(null)
+
+  useEffect(() => {
+    if (streamedRef.current) return
+    const el = elRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setTick(0)
+          io.disconnect()
+        }
+      },
+      { threshold: 0.1 }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [streamedRef])
+
+  useEffect(() => {
+    if (tick < 0) return
+    const maxTick = total + 9
+    if (tick >= maxTick) {
+      streamedRef.current = true
+      return
+    }
+    const id = setTimeout(() => setTick((t) => t + 1), 15)
+    return () => clearTimeout(id)
+  }, [tick, total, streamedRef])
+
+  let offset = 0
+  return (
+    <ul className="psum-list" ref={elRef}>
+      {bullets.map((b, bi) => {
+        if (bi < staticCount) {
+          return <li key={bi}><SumCheck />{b}</li>
+        }
+        const start = offset
+        offset += b.length
+        const revealed = tick < 0 ? 0 : Math.min(Math.max(tick - start, 0), b.length)
+        return (
+          <li key={bi} className={revealed > 0 ? '' : 'psum-li-pending'}>
+            {revealed > 0 && <SumCheck />}
+            <span>
+              {b.split('').map((ch, i) => {
+                if (i >= revealed) return null
+                const distance = tick - (start + i)
+                const opacity = distance >= 9 ? 1 : 0.1 + (0.9 * distance) / 9
+                return <span key={i} style={{ opacity }}>{ch}</span>
+              })}
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function DetailsAiBox({ variant }) {
   const [open, setOpen] = useState(false)
   const streamedRef = useRef(false)
@@ -486,7 +636,11 @@ function DetailsAiBox({ variant }) {
         <span className="pdet-ai-title">Summarised by AI</span>
         <Chev className={`pdet-ai-chev${open ? ' up' : ''}`} />
       </button>
-      {!open && <StreamingTeaser text={GLANCE_TEASER} streamedRef={streamedRef} className="pdet-ai-teaser" />}
+      {!open && (
+        <div className="pdet-ai-collapsed">
+          <StreamingBullets bullets={GLANCE_BULLETS} streamedRef={streamedRef} staticCount={1} />
+        </div>
+      )}
       <AnimatePresence initial={false}>
         {open && (
           <motion.div

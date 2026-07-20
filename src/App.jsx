@@ -24,14 +24,12 @@ export default function App() {
 function PDP() {
   const [summaryOption, setSummaryOption] = useState(1)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [widgetDismissed, setWidgetDismissed] = useState(false)
 
-  // Switching design options resets the option-4 widget/sheet state so the
-  // widget (and its streaming teaser) plays fresh each time it's re-selected.
+  // Switching design options resets the option-4 sheet state so the widget
+  // (and its streaming teaser) plays fresh each time it's re-selected.
   function selectOption(n) {
     setSummaryOption(n)
     setSheetOpen(false)
-    setWidgetDismissed(false)
   }
 
   // Scroll-linked gallery: the product image shrinks as the page scrolls,
@@ -47,11 +45,8 @@ function PDP() {
       <div className="pdp-scroll" ref={scrollRef}>
         <Gallery imgScale={imgScale} imgOpacity={imgOpacity} />
         <div className="pdp-sections">
-          {summaryOption === 4 && !widgetDismissed && (
-            <SummaryWidget
-              onOpen={() => setSheetOpen(true)}
-              onDismiss={() => setWidgetDismissed(true)}
-            />
+          {summaryOption === 4 && (
+            <SummaryWidget onOpen={() => setSheetOpen(true)} />
           )}
           <MainInfo />
           <Delivery />
@@ -74,9 +69,18 @@ function PDP() {
 }
 
 /* -------------------------------- Bottom nav ------------------------------- */
+function NoraFab() {
+  return (
+    <button className="nora-fab" aria-label="Ask Nora">
+      <img src="/icons/nora-flower.svg" alt="" width="24" height="26" />
+    </button>
+  )
+}
+
 function BottomNav() {
   return (
     <div className="pdp-bottomnav">
+      <NoraFab />
       <div className="pdp-bottomnav-row">
         <div className="qty-box">
           <span className="qty-label">QTY</span>
@@ -93,12 +97,13 @@ function BottomNav() {
 /* ----------------------------- Status bar + header ----------------------------- */
 /* Shared top navigation. state 1: back + search(icon) + wishlist + share.
    state 2: back + search(pill) + share. */
-function TopNav({ state = 1, onBack }) {
+function TopNav({ state = 1, onBack, center }) {
   return (
     <div className="tb-nav">
       <button className="tb-btn" onClick={onBack} aria-label="Back">
         <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6"/></svg>
       </button>
+      {center}
       <div className="tb-actions">
         {state === 2 ? (
           <motion.button
@@ -132,21 +137,23 @@ function TopNav({ state = 1, onBack }) {
 }
 
 function StatusBar({ summaryOption, onSummaryOption }) {
+  const toggle = (
+    <div className="summary-toggle" role="group" aria-label="Product summary design">
+      {[1, 2, 3, 4].map((n) => (
+        <button
+          key={n}
+          className={`summary-toggle-btn${summaryOption === n ? ' on' : ''}`}
+          onClick={() => onSummaryOption(n)}
+          aria-pressed={summaryOption === n}
+        >
+          {n}
+        </button>
+      ))}
+    </div>
+  )
   return (
     <div className="pdp-topbar">
-      <TopNav state={1} />
-      <div className="summary-toggle" role="group" aria-label="Product summary design">
-        {[1, 2, 3, 4].map((n) => (
-          <button
-            key={n}
-            className={`summary-toggle-btn${summaryOption === n ? ' on' : ''}`}
-            onClick={() => onSummaryOption(n)}
-            aria-pressed={summaryOption === n}
-          >
-            {n}
-          </button>
-        ))}
-      </div>
+      <TopNav state={1} center={toggle} />
     </div>
   )
 }
@@ -324,7 +331,7 @@ function ProductGlance() {
 /* --------------- Option 4: floating summary widget + sheet --------------- */
 const WIDGET_TEASER = 'Fast GaN charger with 3-device charging, laptop support and travel-ready design.'
 
-function SummaryWidget({ onOpen, onDismiss }) {
+function SummaryWidget({ onOpen }) {
   const streamedRef = useRef(false)
   return (
     <div className="sumw" role="button" tabIndex={0} onClick={onOpen}>
@@ -334,13 +341,6 @@ function SummaryWidget({ onOpen, onDismiss }) {
           Product summary
           <Chev className="sumw-chev" />
         </span>
-        <button
-          className="sumw-x"
-          aria-label="Dismiss summary"
-          onClick={(e) => { e.stopPropagation(); onDismiss() }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M6 6l12 12M18 6L6 18" /></svg>
-        </button>
       </div>
       <StreamingTeaser text={WIDGET_TEASER} streamedRef={streamedRef} className="sumw-teaser" />
     </div>
@@ -636,7 +636,7 @@ function DetailsAiBox({ variant }) {
       <motion.div
         className={`pdet-ai-reveal${open ? '' : ' collapsed'}`}
         initial={false}
-        animate={{ height: open ? 'auto' : 64 }}
+        animate={{ height: open ? 'auto' : 68 }}
         transition={MOTION}
         style={{ overflow: 'hidden' }}
       >

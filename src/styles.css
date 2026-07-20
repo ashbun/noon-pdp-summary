@@ -82,7 +82,7 @@ input, button, textarea, select { font-family: inherit; }
   background: linear-gradient(180deg, rgba(255,255,255,.92) 55%, rgba(255,255,255,0));
   padding-bottom: 8px;
 }
-.summary-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px; }
+.summary-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .summary-toggle-btn {
   width: 28px; height: 28px; border-radius: 9999px; cursor: pointer; padding: 0;
   border: 1px solid var(--line-2); background: rgba(255,255,255,.9); color: var(--ink-600);
@@ -149,10 +149,21 @@ input, button, textarea, select { font-family: inherit; }
 
 /* Bottom nav */
 .pdp-bottomnav {
+  position: relative;
   flex: 0 0 auto; display: flex; flex-direction: column;
   background: var(--white);
   box-shadow: 0 -2px 4px rgba(0,0,0,.05);
 }
+/* Nora FAB: floats 16px above the bottom nav, 16px from the right edge. */
+.nora-fab {
+  position: absolute; right: 16px; bottom: 100%; margin-bottom: 16px; z-index: 5;
+  width: 52px; height: 52px; border-radius: 36px; cursor: pointer;
+  display: grid; place-items: center; padding: 0;
+  border: 2px solid #fff;
+  background: linear-gradient(180deg, #e96cc4 0%, #b06dff 100%);
+  box-shadow: 0 -4px 18.45px #fad6ff, 0 4px 14px rgba(176,109,255,.35);
+}
+.nora-fab img { display: block; width: 24px; height: 26px; }
 .pdp-bottomnav-row { display: flex; align-items: center; gap: 8px; height: 72px; padding: 12px; }
 .qty-box {
   flex: 0 0 auto; width: 48px; height: 48px;
@@ -426,7 +437,7 @@ input, button, textarea, select { font-family: inherit; }
 .psum-know { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .psum-know-h { margin: 0; padding: 6px 12px 0; font-size: 13px; font-weight: 700; line-height: 20px; color: var(--ink-900); letter-spacing: -0.1px; }
 .psum-know-row { display: flex; align-items: center; gap: 8px; padding: 0 12px; margin-bottom: 4px; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-700); letter-spacing: -0.1px; }
-.psum-info { flex: 0 0 auto; color: var(--ink-600); }
+.psum-info { flex: 0 0 auto; color: #9FA2EF; }
 .psum-foot { margin-top: 8px; height: 38px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 4px 12px; background: #fdf6ff; }
 .psum-foot-q { font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-600); letter-spacing: -0.1px; }
 .psum-ask { display: inline-flex; align-items: center; gap: 0; border: 0; background: none; padding: 4px 0; cursor: pointer; font-family: inherit; }
@@ -462,10 +473,6 @@ input, button, textarea, select { font-family: inherit; }
 }
 .sumw-chev { width: 16px; height: 16px; color: #a13fe0; }
 .sumw-chev path { stroke: #ae3ee7; }
-.sumw-x {
-  flex: 0 0 auto; width: 22px; height: 22px; border: 0; padding: 0; cursor: pointer;
-  background: none; color: var(--ink-500); display: grid; place-items: center;
-}
 .sumw-teaser {
   position: relative; z-index: 1;
   /* Extend to the right edge so the text runs to section width minus the
@@ -681,7 +688,7 @@ input, button, textarea, select { font-family: inherit; }
 .pdet-ai-head { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
 .pdet-ai-toggle { border: 0; background: none; cursor: pointer; font-family: inherit; width: 100%; }
 .pdet-ai-title { font-size: 14px; font-weight: 700; letter-spacing: -0.14px; background: linear-gradient(90deg, #4146ce, #bf3deb); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
-.pdet-ai-chev { width: 20px; height: 20px; color: #8f4fe0; transform: rotate(90deg); transition: transform .18s ease; }
+.pdet-ai-chev { width: 20px; height: 20px; color: #1D2539; transform: rotate(90deg); transition: transform .18s ease; }
 .pdet-ai-chev.up { transform: rotate(-90deg); }
 /* Same content in default & expanded — collapsed just clips + fades the tail. */
 .pdet-ai-reveal.collapsed {
@@ -690,6 +697,8 @@ input, button, textarea, select { font-family: inherit; }
 }
 .pdet-ai-inner { display: flex; flex-direction: column; gap: 12px; }
 .pdet-ai-inner .psum-list { margin-top: 0; }
+/* Option 2: tighten heading -> content gap by 4px (8px margin -> 4px). */
+.pdet-ai--static .psum-list { margin-top: 4px; }
 .pdet-ai-inner .psum-know { margin-top: 0; }
 .psum-li-pending { min-height: 20px; }
 .accordion { margin-bottom: 8px; background: var(--surface); border-radius: 10px; overflow: hidden; }

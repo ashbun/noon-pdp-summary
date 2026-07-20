@@ -48,6 +48,9 @@ function PDP() {
           {summaryOption === 4 && (
             <SummaryWidget onOpen={() => setSheetOpen(true)} />
           )}
+          {summaryOption === 2 && (
+            <Option2Summary onOpen={() => setSheetOpen(true)} />
+          )}
           <MainInfo />
           <Delivery />
           {summaryOption === 1 && <ProductGlance />}
@@ -61,7 +64,7 @@ function PDP() {
         </div>
       </div>
       <BottomNav />
-      {summaryOption === 4 && (
+      {(summaryOption === 4 || summaryOption === 2) && (
         <SummarySheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
       )}
     </div>
@@ -347,6 +350,41 @@ function SummaryWidget({ onOpen }) {
   )
 }
 
+// Option 2: same product-summary widget but placed below the gallery (in flow,
+// not overlapping). Streams a teaser first, then collapses to a compact
+// title-only row 3s after the text finishes — or immediately when tapped.
+// Tapping also opens the full summary sheet.
+function Option2Summary({ onOpen }) {
+  const streamedRef = useRef(false)
+  const [compact, setCompact] = useState(false)
+  const [streamDone, setStreamDone] = useState(false)
+
+  // Collapse to compact 3s after the teaser finishes streaming.
+  useEffect(() => {
+    if (!streamDone || compact) return
+    const id = setTimeout(() => setCompact(true), 3000)
+    return () => clearTimeout(id)
+  }, [streamDone, compact])
+
+  return (
+    <div
+      className={`sumw sumw--inflow${compact ? ' sumw--compact' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => { setCompact(true); onOpen() }}
+    >
+      <img className="ai-glow" src="/icons/ai-glow.svg" alt="" aria-hidden />
+      <div className="sumw-top">
+        <span className="sumw-label">Product summary</span>
+        <Chev className="sumw-chev" />
+      </div>
+      <div className={`sumw-teaser-wrap${compact ? ' compact' : ''}`}>
+        <StreamingTeaser text={WIDGET_TEASER} streamedRef={streamedRef} className="sumw-teaser" onDone={() => setStreamDone(true)} />
+      </div>
+    </div>
+  )
+}
+
 function SummarySheet({ open, onClose }) {
   return (
     <div className={`cart-overlay sum-overlay${open ? ' open' : ''}`} onClick={onClose}>
@@ -491,9 +529,10 @@ function Trustmarkers() {
 // into view. The trailing 10 characters fade in (10% -> 100% opacity); older
 // characters are already fully opaque. `streamedRef` remembers completion so
 // re-showing the node (e.g. re-collapsing an accordion) doesn't replay it.
-function StreamingTeaser({ text, streamedRef, className }) {
+function StreamingTeaser({ text, streamedRef, className, onDone }) {
   const [tick, setTick] = useState(streamedRef.current ? text.length + 9 : -1)
   const elRef = useRef(null)
+  const doneFiredRef = useRef(false)
 
   useEffect(() => {
     if (streamedRef.current) return
@@ -517,11 +556,15 @@ function StreamingTeaser({ text, streamedRef, className }) {
     const maxTick = text.length + 9
     if (tick >= maxTick) {
       streamedRef.current = true
+      if (!doneFiredRef.current) {
+        doneFiredRef.current = true
+        onDone?.()
+      }
       return
     }
     const id = setTimeout(() => setTick((t) => t + 1), 15)
     return () => clearTimeout(id)
-  }, [tick, text, streamedRef])
+  }, [tick, text, streamedRef, onDone])
 
   const revealedCount = tick < 0 ? 0 : Math.min(tick + 1, text.length)
 
@@ -607,23 +650,9 @@ function StreamingBullets({ bullets, streamedRef, staticCount = 1 }) {
   )
 }
 
-function DetailsAiBox({ variant }) {
+function DetailsAiBox() {
   const [open, setOpen] = useState(false)
   const streamedRef = useRef(false)
-  if (variant === 2) {
-    return (
-      <div className="pdet-ai pdet-ai--static">
-        <div className="pdet-ai-head">
-          <span className="pdet-ai-title">Summarised by AI</span>
-        </div>
-        <ul className="psum-list">
-          {GLANCE_BULLETS.map((b) => (
-            <li key={b}><SumCheck />{b}</li>
-          ))}
-        </ul>
-      </div>
-    )
-  }
   // Default and expanded share ONE content block (same bullets + "Good to
   // know"), so the two states feel uniform. Collapsing just clips the height
   // and fades the overflow; expanding animates the height open.
@@ -665,7 +694,7 @@ function ProductDetails({ summaryOption }) {
   return (
     <section className="card details">
       <h3 className="section-h">Product Details</h3>
-      {(summaryOption === 2 || summaryOption === 3) && <DetailsAiBox variant={summaryOption} />}
+      {summaryOption === 3 && <DetailsAiBox />}
       {rows.map((r) => (
         <div className="accordion" key={r}>
           <button className="accordion-head" onClick={() => setOpen(open === r ? null : r)}>

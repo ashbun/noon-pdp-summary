@@ -481,6 +481,14 @@ input, button, textarea, select { font-family: inherit; }
   color: var(--ink-700); letter-spacing: -0.1px;
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
+/* Option 2: in-flow (below the gallery, no overlap) + collapsible teaser. */
+.sumw--inflow { margin: 0; z-index: 1; }
+.sumw--inflow .ai-glow { top: -66px; }
+.sumw-teaser-wrap {
+  position: relative; z-index: 1; max-height: 24px; overflow: hidden;
+  transition: max-height .3s ease, opacity .22s ease;
+}
+.sumw-teaser-wrap.compact { max-height: 0; opacity: 0; }
 
 /* --------- Option 4: product-summary bottom sheet --------- */
 .sum-sheet { position: relative; max-height: min(560px, calc(100% - 24px)); padding: 16px 16px 12px; }
@@ -683,8 +691,8 @@ input, button, textarea, select { font-family: inherit; }
   display: flex; flex-direction: column; gap: 6px; padding: 12px 0 0; margin-bottom: 12px; border-radius: 12px;
   background: linear-gradient(90deg, rgba(65,70,206,.04), rgba(191,61,235,.04));
 }
-/* Option 2 (always shown) and option 3 when expanded get a 12px bottom pad. */
-.pdet-ai--static, .pdet-ai--open { padding-bottom: 12px; }
+/* Option 3 when expanded gets a 12px bottom pad. */
+.pdet-ai--open { padding-bottom: 12px; }
 .pdet-ai-head { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
 .pdet-ai-toggle { border: 0; background: none; cursor: pointer; font-family: inherit; width: 100%; }
 .pdet-ai-title { font-size: 14px; font-weight: 700; letter-spacing: -0.14px; background: linear-gradient(90deg, #4146ce, #bf3deb); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
@@ -697,8 +705,6 @@ input, button, textarea, select { font-family: inherit; }
 }
 .pdet-ai-inner { display: flex; flex-direction: column; gap: 12px; }
 .pdet-ai-inner .psum-list { margin-top: 0; }
-/* Option 2: tighten heading -> content gap by 4px (8px margin -> 4px). */
-.pdet-ai--static .psum-list { margin-top: 4px; }
 .pdet-ai-inner .psum-know { margin-top: 0; }
 .psum-li-pending { min-height: 20px; }
 .accordion { margin-bottom: 8px; background: var(--surface); border-radius: 10px; overflow: hidden; }

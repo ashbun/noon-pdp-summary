@@ -483,7 +483,7 @@ input, button, textarea, select { font-family: inherit; }
 }
 /* Option 2: in-flow (below the gallery, no overlap) + collapsible teaser. */
 .sumw--inflow { margin: 0; z-index: 1; }
-.sumw--inflow .ai-glow { top: -66px; }
+.sumw--inflow .ai-glow { top: -78px; }
 .sumw-teaser-wrap {
   position: relative; z-index: 1; max-height: 24px; overflow: hidden;
   transition: max-height .3s ease, opacity .22s ease;

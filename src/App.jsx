@@ -24,6 +24,9 @@ export default function App() {
 function PDP() {
   const [summaryOption, setSummaryOption] = useState(1)
   const [sheetOpen, setSheetOpen] = useState(false)
+  // Global content mode (Normal / Focus / Pair) chosen from the toggle below the
+  // top bar. It swaps the "Product at a glance" body across every option.
+  const [contentMode, setContentMode] = useState('Normal')
 
   // Switching design options resets the option-4 sheet state so the widget
   // (and its streaming teaser) plays fresh each time it's re-selected.
@@ -41,7 +44,12 @@ function PDP() {
 
   return (
     <div className="pdp">
-      <StatusBar summaryOption={summaryOption} onSummaryOption={selectOption} />
+      <StatusBar
+        summaryOption={summaryOption}
+        onSummaryOption={selectOption}
+        contentMode={contentMode}
+        onContentMode={setContentMode}
+      />
       <div className="pdp-scroll" ref={scrollRef}>
         <Gallery imgScale={imgScale} imgOpacity={imgOpacity} />
         <div className="pdp-sections">
@@ -53,11 +61,11 @@ function PDP() {
           )}
           <MainInfo />
           <Delivery />
-          {summaryOption === 1 && <ProductGlance />}
+          {summaryOption === 1 && <ProductGlance mode={contentMode} />}
           <PaymentOffers />
           <VariantPicker />
           <Trustmarkers />
-          <ProductDetails summaryOption={summaryOption} />
+          <ProductDetails summaryOption={summaryOption} contentMode={contentMode} />
           <AdditionalInfo />
           <SellerWidget />
           <Reviews />
@@ -65,7 +73,7 @@ function PDP() {
       </div>
       <BottomNav />
       {(summaryOption === 4 || summaryOption === 2) && (
-        <SummarySheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+        <SummarySheet open={sheetOpen} onClose={() => setSheetOpen(false)} mode={contentMode} />
       )}
     </div>
   )
@@ -139,7 +147,7 @@ function TopNav({ state = 1, onBack, center }) {
   )
 }
 
-function StatusBar({ summaryOption, onSummaryOption }) {
+function StatusBar({ summaryOption, onSummaryOption, contentMode, onContentMode }) {
   const toggle = (
     <div className="summary-toggle" role="group" aria-label="Product summary design">
       {[1, 2, 3, 4].map((n) => (
@@ -157,6 +165,18 @@ function StatusBar({ summaryOption, onSummaryOption }) {
   return (
     <div className="pdp-topbar">
       <TopNav state={1} center={toggle} />
+      <div className="mswitch content-toggle" role="group" aria-label="Summary content mode">
+        {CONTENT_TABS.map((c) => (
+          <button
+            key={c}
+            className={`mswitch-seg${contentMode === c ? ' on' : ''}`}
+            onClick={() => onContentMode(c)}
+            aria-pressed={contentMode === c}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -283,13 +303,47 @@ function Delivery() {
 }
 
 /* --------------------- Product at a glance (AI summary) -------------------- */
-const GLANCE_BULLETS = [
-  'Fast charges laptops and smartphones',
-  'Power up 3 devices at once',
-  'Works with MacBook, iPhone & Samsung',
-  'Efficient GaN technology for less heat',
-  'Compact enough for everyday travel',
-]
+// Content modes selected by the toggle below the top bar. Each mode swaps the
+// "Product at a glance" body: Normal = plain bullets, Focus = the same bullets
+// with the key phrase emphasised, Pair = a compact spec table. "Good to know"
+// rides along with the bullet modes; Pair is table-only.
+const CONTENT_MODES = {
+  Normal: {
+    bullets: [
+      [['Fast charges laptops and smartphones']],
+      [['Power up 3 devices at once']],
+      [['Works with MacBook, iPhone & Samsung']],
+      [['Efficient GaN technology for less heat']],
+      [['Compact enough for everyday travel']],
+    ],
+    goodToKnow: 'Does not support 240V power supply.',
+  },
+  Focus: {
+    bullets: [
+      [['65W fast charging', true], [' for laptops and phones']],
+      [['Power up '], ['3 devices', true], [' at once']],
+      [['Works with MacBook, iPhone & Samsung']],
+      [['Efficient '], ['GaN technology', true], [' for less heat']],
+      [['Compact', true], [' enough for everyday travel']],
+    ],
+    goodToKnow: 'Does not support 240V power supply.',
+  },
+  Pair: {
+    table: [
+      ['Charging', '65W Fast charging'],
+      ['Usage', '3 devices'],
+      ['Ports', '2 x USB + 1 USB-A'],
+      ['Compatibility', 'Macbook, iPhone, Samsung'],
+      ['Technology', 'GaN + PPS'],
+    ],
+  },
+}
+const CONTENT_TABS = ['Normal', 'Focus', 'Pair']
+
+function renderBullet(parts) {
+  return parts.map(([t, bold], i) => (bold ? <b key={i}>{t}</b> : <span key={i}>{t}</span>))
+}
+
 function SumCheck() {
   return (
     <svg className="psum-check" width="16" height="16" viewBox="0 0 16 16" aria-hidden>
@@ -297,29 +351,59 @@ function SumCheck() {
     </svg>
   )
 }
-function ProductGlance() {
+
+function InfoCircle() {
+  return (
+    <svg className="psum-info" width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8"/>
+      <path stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" d="M12 11v5"/>
+      <circle cx="12" cy="7.7" r="1.1" fill="currentColor"/>
+    </svg>
+  )
+}
+
+// Shared "Product at a glance" body — bullets (+ Good to know) or a spec table,
+// selected by the active content mode.
+function GlanceBody({ mode = 'Normal' }) {
+  const m = CONTENT_MODES[mode] || CONTENT_MODES.Normal
+  if (m.table) {
+    return (
+      <div className="psum-table">
+        {m.table.map(([k, v]) => (
+          <div className="psum-trow" key={k}>
+            <span className="psum-tkey">{k}</span>
+            <span className="psum-tval">{v}</span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  return (
+    <>
+      <ul className="psum-list">
+        {m.bullets.map((b, i) => <li key={i}><SumCheck />{renderBullet(b)}</li>)}
+      </ul>
+      {m.goodToKnow && (
+        <div className="psum-know">
+          <p className="psum-know-h">Good to know</p>
+          <div className="psum-know-row">
+            <InfoCircle />
+            <span>{m.goodToKnow}</span>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+function ProductGlance({ mode }) {
   return (
     <section className="psum">
       <div className="psum-head">
         <span className="psum-title psum-title--shimmer">Product summary</span>
         <span className="psum-ai">Summarised by AI</span>
       </div>
-      <ul className="psum-list">
-        {GLANCE_BULLETS.map((b) => (
-          <li key={b}><SumCheck />{b}</li>
-        ))}
-      </ul>
-      <div className="psum-know">
-        <p className="psum-know-h">Good to know</p>
-        <div className="psum-know-row">
-          <svg className="psum-info" width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8"/>
-            <path stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" d="M12 11v5"/>
-            <circle cx="12" cy="7.7" r="1.1" fill="currentColor"/>
-          </svg>
-          <span>Does not support 240V power supply.</span>
-        </div>
-      </div>
+      <GlanceBody mode={mode} />
       <div className="psum-foot">
         <span className="psum-foot-q">Still have a question about product?</span>
         <button className="psum-ask">
@@ -385,7 +469,7 @@ function Option2Summary({ onOpen }) {
   )
 }
 
-function SummarySheet({ open, onClose }) {
+function SummarySheet({ open, onClose, mode }) {
   return (
     <div className={`cart-overlay sum-overlay${open ? ' open' : ''}`} onClick={onClose}>
       <div className="cart-sheet sum-sheet" onClick={(e) => e.stopPropagation()}>
@@ -394,22 +478,7 @@ function SummarySheet({ open, onClose }) {
           <span className="sum-title">Product summary</span>
           <span className="psum-ai">Summarised by AI</span>
         </div>
-        <ul className="psum-list">
-          {GLANCE_BULLETS.map((b) => (
-            <li key={b}><SumCheck />{b}</li>
-          ))}
-        </ul>
-        <div className="psum-know">
-          <p className="psum-know-h">Good to know</p>
-          <div className="psum-know-row">
-            <svg className="psum-info" width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
-              <path stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" d="M12 11v5" />
-              <circle cx="12" cy="7.7" r="1.1" fill="currentColor" />
-            </svg>
-            <span>Does not support 240V power supply.</span>
-          </div>
-        </div>
+        <GlanceBody mode={mode} />
         <button className="sum-okbtn" onClick={onClose}>Ok, Got it</button>
       </div>
     </div>
@@ -580,121 +649,11 @@ function StreamingTeaser({ text, streamedRef, className, onDone }) {
   )
 }
 
-// Streams a bulleted summary the first time it scrolls into view. The first
-// `staticCount` bullets are shown immediately; every bullet after that reveals
-// character-by-character (trailing 9 chars fade 10%->100%), one bullet flowing
-// into the next. Each bullet's check icon appears once its first char lands.
-// `streamedRef` remembers completion so re-collapsing doesn't replay it.
-function StreamingBullets({ bullets, streamedRef, staticCount = 1 }) {
-  const total = bullets.slice(staticCount).reduce((n, b) => n + b.length, 0)
-  const [tick, setTick] = useState(streamedRef.current ? total + 9 : -1)
-  const elRef = useRef(null)
-
-  useEffect(() => {
-    if (streamedRef.current) return
-    const el = elRef.current
-    if (!el) return
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setTick(0)
-          io.disconnect()
-        }
-      },
-      { threshold: 0.1 }
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [streamedRef])
-
-  useEffect(() => {
-    if (tick < 0) return
-    const maxTick = total + 9
-    if (tick >= maxTick) {
-      streamedRef.current = true
-      return
-    }
-    const id = setTimeout(() => setTick((t) => t + 1), 16)
-    return () => clearTimeout(id)
-  }, [tick, total, streamedRef])
-
-  const FADE = 9 // trailing chars that fade 10% -> 100%
-  let offset = 0
-  return (
-    <ul className="psum-list" ref={elRef}>
-      {bullets.map((b, bi) => {
-        if (bi < staticCount) {
-          return <li key={bi}><SumCheck />{b}</li>
-        }
-        const start = offset
-        offset += b.length
-        const revealed = tick < 0 ? 0 : Math.min(Math.max(tick - start, 0), b.length)
-        // Only the trailing FADE chars need per-char opacity spans; everything
-        // before them is already fully opaque and renders as one plain string.
-        const solid = Math.min(Math.max(tick - start - FADE + 1, 0), revealed)
-        return (
-          <li key={bi} className={revealed > 0 ? '' : 'psum-li-pending'}>
-            {revealed > 0 && <SumCheck />}
-            <span>
-              {b.slice(0, solid)}
-              {b.slice(solid, revealed).split('').map((ch, i) => {
-                const distance = tick - (start + solid + i)
-                const opacity = distance >= FADE ? 1 : 0.1 + (0.9 * distance) / FADE
-                return <span key={solid + i} style={{ opacity }}>{ch}</span>
-              })}
-            </span>
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-function DetailsAiBox() {
-  const [open, setOpen] = useState(false)
-  const streamedRef = useRef(false)
-  // Default and expanded share ONE content block (same bullets + "Good to
-  // know"), so the two states feel uniform. Collapsing just clips the height
-  // and fades the overflow; expanding animates the height open.
-  return (
-    <div className={`pdet-ai${open ? ' pdet-ai--open' : ''}`}>
-      <button className="pdet-ai-head pdet-ai-toggle" onClick={() => setOpen((o) => !o)}>
-        <span className="pdet-ai-title">Summarised by AI</span>
-        <Chev className={`pdet-ai-chev${open ? ' up' : ''}`} />
-      </button>
-      <motion.div
-        className={`pdet-ai-reveal${open ? '' : ' collapsed'}`}
-        initial={false}
-        animate={{ height: open ? 'auto' : 68 }}
-        transition={MOTION}
-        style={{ overflow: 'hidden' }}
-      >
-        <div className="pdet-ai-inner">
-          <StreamingBullets bullets={GLANCE_BULLETS} streamedRef={streamedRef} staticCount={1} />
-          <div className="psum-know">
-            <p className="psum-know-h">Good to know</p>
-            <div className="psum-know-row">
-              <svg className="psum-info" width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8"/>
-                <path stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" d="M12 11v5"/>
-                <circle cx="12" cy="7.7" r="1.1" fill="currentColor"/>
-              </svg>
-              <span>Does not support 240V power supply.</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
-function ProductDetails({ summaryOption }) {
+function DetailAccordions() {
   const rows = ['Overview', 'Highlights', 'Specifications']
   const [open, setOpen] = useState(null)
   return (
-    <section className="card details">
-      <h3 className="section-h">Product Details</h3>
-      {summaryOption === 3 && <DetailsAiBox />}
+    <>
       {rows.map((r) => (
         <div className="accordion" key={r}>
           <button className="accordion-head" onClick={() => setOpen(open === r ? null : r)}>
@@ -710,6 +669,73 @@ function ProductDetails({ summaryOption }) {
           </AnimatePresence>
         </div>
       ))}
+    </>
+  )
+}
+
+function AskNoraFoot() {
+  return (
+    <div className="det-foot">
+      <span className="det-foot-q">Still have a question about product?</span>
+      <button className="psum-ask">
+        <span className="psum-ask-txt">Ask Nora</span>
+        <Chev className="psum-ask-chev" />
+      </button>
+    </div>
+  )
+}
+
+// Option 3: Product Details with an "AI Summary | All details" segmented switch.
+// Defaults to the AI-summary view; its body follows the active content mode.
+// "All details" swaps in the accordion list. Ask Nora stays pinned at the bottom
+// of either tab.
+function DetailsTabs({ mode }) {
+  const [tab, setTab] = useState('ai')
+  return (
+    <section className="card details det-card">
+      <h3 className="section-h det-h">Product Details</h3>
+      <div className="det-body">
+        <div className="mswitch det-switch" role="tablist" aria-label="Product details view">
+          <button className={`mswitch-seg${tab === 'ai' ? ' on' : ''}`} role="tab" aria-selected={tab === 'ai'} onClick={() => setTab('ai')}>AI Summary</button>
+          <button className={`mswitch-seg${tab === 'all' ? ' on' : ''}`} role="tab" aria-selected={tab === 'all'} onClick={() => setTab('all')}>All details</button>
+        </div>
+        {/* Only the middle panel morphs between tabs — the height eases and the
+            content crossfades, while the Ask Nora footer below stays put. */}
+        <motion.div className="det-swap" layout transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }}>
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={tab}
+              style={{ width: '100%' }}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+            >
+              {tab === 'ai' ? (
+                <div className="det-glance">
+                  <span className="det-glance-title">Product at a glance</span>
+                  <GlanceBody mode={mode} />
+                </div>
+              ) : (
+                <div className="det-all">
+                  <DetailAccordions />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+      </div>
+      <AskNoraFoot />
+    </section>
+  )
+}
+
+function ProductDetails({ summaryOption, contentMode }) {
+  if (summaryOption === 3) return <DetailsTabs mode={contentMode} />
+  return (
+    <section className="card details">
+      <h3 className="section-h">Product Details</h3>
+      <DetailAccordions />
     </section>
   )
 }

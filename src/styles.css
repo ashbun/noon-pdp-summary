@@ -90,6 +90,30 @@ input, button, textarea, select { font-family: inherit; }
   backdrop-filter: blur(4px);
 }
 .summary-toggle-btn.on { background: var(--blue2); border-color: var(--blue2); color: #fff; }
+
+/* Segmented switch (content mode toggle + product-details tabs) */
+.mswitch {
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--surface); border-radius: 9999px;
+  box-shadow: inset 0 1px 4px rgba(36, 36, 36, .04);
+}
+.mswitch-seg {
+  flex: 1 0 0; min-height: 32px; padding: 0 10px;
+  border: 1px solid transparent; background: none; cursor: pointer;
+  border-radius: 9999px; font-family: inherit; font-size: 12px; font-weight: 600;
+  letter-spacing: -0.1px; color: var(--ink-600);
+  transition: color .15s ease, background .15s ease;
+}
+.mswitch-seg.on {
+  background: #fff; color: var(--ink-900); border-color: #fff;
+  box-shadow: 0 1px 3px rgba(34, 34, 34, .1);
+}
+/* Content-mode toggle sits over the gallery, just below the top nav */
+.content-toggle {
+  margin: 4px 12px 0;
+  background: rgba(249, 249, 251, .92);
+  backdrop-filter: blur(4px);
+}
 .statusbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 20px 2px; color: var(--ink);
@@ -438,6 +462,11 @@ input, button, textarea, select { font-family: inherit; }
 .psum-know-h { margin: 0; padding: 6px 12px 0; font-size: 13px; font-weight: 700; line-height: 20px; color: var(--ink-900); letter-spacing: -0.1px; }
 .psum-know-row { display: flex; align-items: center; gap: 8px; padding: 0 12px; margin-bottom: 4px; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-700); letter-spacing: -0.1px; }
 .psum-info { flex: 0 0 auto; color: #9FA2EF; }
+/* Pair content mode — two-column spec table */
+.psum-table { display: flex; flex-direction: column; gap: 10px; padding: 8px 12px 0; }
+.psum-trow { display: flex; gap: 12px; font-size: 13px; line-height: 20px; letter-spacing: -0.1px; }
+.psum-tkey { flex: 0 0 92px; color: var(--ink-600); font-weight: 400; }
+.psum-tval { flex: 1 1 auto; color: var(--ink-900); font-weight: 600; }
 .psum-foot { margin-top: 8px; height: 38px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 4px 12px; background: #fdf6ff; }
 .psum-foot-q { font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-600); letter-spacing: -0.1px; }
 .psum-ask { display: inline-flex; align-items: center; gap: 0; border: 0; background: none; padding: 4px 0; cursor: pointer; font-family: inherit; }
@@ -503,6 +532,9 @@ input, button, textarea, select { font-family: inherit; }
 .sum-sheet .psum-know { position: relative; z-index: 1; margin-top: 20px; padding: 0; gap: 6px; }
 .sum-sheet .psum-know-h { padding: 0; font-size: 14px; }
 .sum-sheet .psum-know-row { padding: 0; font-size: 14px; }
+.sum-sheet .psum-table { position: relative; z-index: 1; padding: 0; gap: 14px; }
+.sum-sheet .psum-trow { font-size: 14px; }
+.sum-sheet .psum-tkey { flex-basis: 110px; }
 .sum-okbtn {
   position: relative; z-index: 1;
   margin-top: 24px; width: 100%; min-height: 48px; padding: 14px 16px; border: 0; border-radius: 10px; cursor: pointer;
@@ -685,28 +717,44 @@ input, button, textarea, select { font-family: inherit; }
 
 /* --------------------------- Product details --------------------------- */
 .section-h { margin: 0 0 14px; font-size: 15px; font-weight: 700; color: var(--ink); }
-.section-h + .pdet-ai { margin-top: -4px; }
 .details { padding-bottom: 8px; }
-.pdet-ai {
-  display: flex; flex-direction: column; gap: 6px; padding: 12px 0 0; margin-bottom: 12px; border-radius: 12px;
-  background: linear-gradient(90deg, rgba(65,70,206,.04), rgba(191,61,235,.04));
+
+/* Option 3 — AI Summary / All details tabs */
+.det-card { padding: 16px 0 0; overflow: hidden; }
+.det-h { margin: 0 0 12px; padding: 0 12px; }
+.det-body { display: flex; flex-direction: column; gap: 12px; padding: 0 12px 12px; }
+.det-switch { width: 100%; margin: 0; }
+.det-swap { position: relative; overflow: hidden; }
+.det-all { display: flex; flex-direction: column; }
+
+/* AI-summary body sits inside a soft blue→purple gradient card. Endpoint
+   colours sampled from Figma: persian-blue tint (#f3f3fc) → purple tint
+   (#fbf3fc) on a 116° diagonal. */
+.det-glance {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 0; border-radius: 12px; overflow: hidden;
+  background: linear-gradient(116deg, #f3f3fc 0%, #fbf3fc 100%);
 }
-/* Option 3 when expanded gets a 12px bottom pad. */
-.pdet-ai--open { padding-bottom: 12px; }
-.pdet-ai-head { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
-.pdet-ai-toggle { border: 0; background: none; cursor: pointer; font-family: inherit; width: 100%; }
-.pdet-ai-title { font-size: 14px; font-weight: 700; letter-spacing: -0.14px; background: linear-gradient(90deg, #4146ce, #bf3deb); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
-.pdet-ai-chev { width: 20px; height: 20px; color: #1D2539; transform: rotate(90deg); transition: transform .18s ease; }
-.pdet-ai-chev.up { transform: rotate(-90deg); }
-/* Same content in default & expanded — collapsed just clips + fades the tail. */
-.pdet-ai-reveal.collapsed {
-  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 20px), transparent 100%);
-  mask-image: linear-gradient(180deg, #000 calc(100% - 20px), transparent 100%);
+.det-glance-title {
+  padding: 0 12px; font-size: 15px; font-weight: 700; letter-spacing: -0.14px;
+  background: linear-gradient(90deg, #4146ce 0%, #bf3deb 54.54%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
 }
-.pdet-ai-inner { display: flex; flex-direction: column; gap: 12px; }
-.pdet-ai-inner .psum-list { margin-top: 0; }
-.pdet-ai-inner .psum-know { margin-top: 0; }
-.psum-li-pending { min-height: 20px; }
+.det-glance .psum-list { margin: 0; gap: 10px; }
+.det-glance .psum-list li { padding: 0 12px; font-size: 14px; line-height: 18px; color: var(--ink-700); }
+.det-glance .psum-know { margin-top: 8px; gap: 8px; }
+.det-glance .psum-know-h { padding: 0 12px; font-size: 14px; line-height: 18px; }
+.det-glance .psum-know-row { margin: 0; padding: 0 12px; font-size: 14px; line-height: 18px; }
+.det-glance .psum-table { padding: 0 12px; }
+
+/* Full-bleed Ask Nora footer */
+.det-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; height: 40px; padding: 6px 12px 8px 16px;
+  background: #fff; border-top: 1px solid var(--line-2);
+}
+.det-foot-q { font-size: 13px; color: var(--ink-600); letter-spacing: -0.1px; }
 .accordion { margin-bottom: 8px; background: var(--surface); border-radius: 10px; overflow: hidden; }
 .accordion-head {
   display: flex; align-items: center; justify-content: space-between; width: 100%;

@@ -459,7 +459,7 @@ input, button, textarea, select { font-family: inherit; }
 }
 .psum-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .psum-list li { display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-700); letter-spacing: -0.1px; }
-.psum-check { flex: 0 0 auto; }
+.psum-check { display: block; width: 16px; height: 16px; flex: 0 0 16px; }
 .psum-know { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .psum-know-h { margin: 0; padding: 6px 12px 0; font-size: 13px; font-weight: 700; line-height: 20px; color: var(--ink-900); letter-spacing: -0.1px; }
 .psum-know-row { display: flex; align-items: center; gap: 8px; padding: 0 12px; margin-bottom: 4px; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-700); letter-spacing: -0.1px; }
@@ -863,12 +863,123 @@ input, button, textarea, select { font-family: inherit; }
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
 }
+.det-glance-title--highlight {
+  background-image: linear-gradient(90deg,
+    #4146ce 0%, #bf3deb 28%, #e96cc4 42%, #f6b8eb 50%,
+    #e96cc4 58%, #bf3deb 72%, #4146ce 100%);
+  background-size: 260% 100%;
+  animation: det-title-highlight 1.2s ease-in-out 2 both;
+}
+@keyframes det-title-highlight {
+  from { background-position: 100% 50%; }
+  to { background-position: 0% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .det-glance-title--highlight { animation: none; background-position: 50% 50%; }
+}
 .det-glance .psum-list { margin: 0; gap: 10px; }
 .det-glance .psum-list li { padding: 0 12px; font-size: 14px; line-height: 18px; color: var(--ink-700); }
 .det-glance .psum-know { margin-top: 8px; gap: 8px; }
 .det-glance .psum-know-h { padding: 0 12px; font-size: 14px; line-height: 18px; }
 .det-glance .psum-know-row { margin: 0; padding: 0 12px; font-size: 14px; line-height: 18px; }
 .det-glance .psum-table { padding: 0 12px; }
+
+/* Option 5 — product summary with Nora follow-up details */
+.nora-summary {
+  position: relative; overflow: hidden; padding-top: 12px; border: 1px solid #fff;
+  border-radius: 12px; background: #fff;
+}
+.nora-summary-head {
+  display: flex; align-items: center; justify-content: space-between; padding: 0 12px;
+}
+.nora-summary-title {
+  position: relative; display: inline-block;
+  font-size: 15px; font-weight: 700; line-height: 18px; letter-spacing: -0.14px;
+  background: linear-gradient(90deg, #4146ce, #bf3deb);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+.nora-summary-title--shimmer {
+  background-image:
+    linear-gradient(107deg,
+      transparent 0, rgba(255,255,255,.12) 4px, rgba(255,255,255,.78) 13px,
+      rgba(255,255,255,.58) 21px, rgba(255,255,255,.08) 30px, transparent 36px),
+    linear-gradient(90deg, #4146ce, #bf3deb);
+  background-position: -90px 50%, 0 0;
+  background-repeat: no-repeat;
+  background-size: 36px 140%, 100% 100%;
+  will-change: background-position;
+  animation: nora-title-shimmer 4s linear infinite;
+}
+@keyframes nora-title-shimmer {
+  0% { background-position: -90px 50%, 0 0; }
+  34% { background-position: calc(100% + 90px) 50%, 0 0; }
+  100% { background-position: calc(100% + 90px) 50%, 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nora-summary-title--shimmer { animation: none; }
+}
+.nora-summary-byline {
+  font-size: 12px; font-weight: 500; line-height: 18px; letter-spacing: -0.1px; color: #989fb3;
+}
+.nora-summary-content .psum-list { margin-top: 12px; gap: 8px; }
+.nora-summary-content .psum-list li { padding: 0 12px; }
+.nora-summary-content .psum-table { padding-top: 12px; }
+.nora-summary-more {
+  position: relative; overflow: hidden; margin-top: 16px; padding: 11px 0 12px;
+}
+.nora-summary-glow {
+  position: absolute; z-index: 0; left: -113px; top: 14px; width: 570px; height: 282px;
+  pointer-events: none;
+}
+.nora-summary-divider {
+  position: absolute; z-index: 1; top: 0; left: 12px; width: calc(100% - 24px); height: 1px;
+}
+.nora-summary-more-head {
+  position: relative; z-index: 1; display: flex; align-items: center;
+  height: 20px; padding: 0 12px; font-size: 13px; font-weight: 600; line-height: 20px;
+  letter-spacing: -0.1px; color: var(--ink-900);
+}
+.nora-suggestions {
+  position: relative; z-index: 1; display: flex; gap: 6px; overflow-x: auto;
+  margin-top: 10px; padding: 0 12px; scrollbar-width: none;
+}
+.nora-suggestions::-webkit-scrollbar { display: none; }
+.nora-suggestion {
+  display: inline-flex; align-items: center; gap: 4px; height: 32px; flex: 0 0 auto;
+  padding: 0 12px; border: 1px solid #fbf0fe; border-radius: 16px; background: #fff;
+  font-family: inherit; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--ink-700);
+  cursor: pointer;
+}
+.nora-suggestion img { display: block; width: 7px; height: 7.5px; flex: 0 0 auto; }
+.nora-question {
+  position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between;
+  width: calc(100% - 24px); height: 44px; margin: 10px 12px 0; padding: 0 12px;
+  border: 1px solid #f7deff; border-radius: 12px; background: #fcfcfd;
+  font-family: inherit; font-size: 13px; font-weight: 400; line-height: 20px;
+  letter-spacing: -0.1px; color: #666d85; text-align: left;
+}
+.nora-question input {
+  min-width: 0; flex: 1; padding: 0; border: 0; outline: 0; background: transparent;
+  font: inherit; letter-spacing: inherit; color: inherit;
+}
+.nora-question input::placeholder { color: #666d85; opacity: 1; }
+.nora-question-send {
+  display: grid; width: 24px; height: 24px; flex: 0 0 24px; padding: 0; border: 0;
+  place-items: center; background: transparent; cursor: default;
+}
+.nora-question-send-icon {
+  display: block; width: 16.4px; height: 15.44px; opacity: .2;
+  background: #666d85;
+  -webkit-mask: url('/icons/nora-summary-send.svg') center / contain no-repeat;
+  mask: url('/icons/nora-summary-send.svg') center / contain no-repeat;
+  transition: opacity 160ms ease;
+}
+.nora-question-send.is-active { cursor: pointer; }
+.nora-question-send.is-active .nora-question-send-icon {
+  opacity: 1;
+  background: linear-gradient(135deg, #b53bea 0%, #ef4da8 100%);
+}
 
 /* Full-bleed Ask Nora footer */
 .det-foot {

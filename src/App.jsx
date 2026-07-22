@@ -59,6 +59,7 @@ function PDP() {
           <MainInfo />
           <Delivery />
           {summaryOption === 1 && <ProductGlance mode={contentMode} />}
+          {summaryOption === 5 && <DetailsNoraSummary mode={contentMode} />}
           <PaymentOffers />
           <VariantPicker />
           <Trustmarkers />
@@ -147,7 +148,7 @@ function TopNav({ state = 1, onBack, center }) {
 function StatusBar({ summaryOption, onSummaryOption, contentMode, onContentMode }) {
   const toggle = (
     <div className="summary-toggle" role="group" aria-label="Product summary design">
-      {[1, 2, 3, 4].map((n) => (
+      {[3, 4, 5, 1, 2].map((n) => (
         <button
           key={n}
           className={`summary-toggle-btn${summaryOption === n ? ' on' : ''}`}
@@ -352,7 +353,8 @@ function renderBullet(parts) {
   return parts.map(([t, bold], i) => (bold ? <b key={i}>{t}</b> : <span key={i}>{t}</span>))
 }
 
-function SumCheck() {
+function SumCheck({ src }) {
+  if (src) return <img className="psum-check" src={src} alt="" aria-hidden />
   return (
     <svg className="psum-check" width="16" height="16" viewBox="0 0 16 16" aria-hidden>
       <path fill="none" stroke="#9FA2EF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M3.2 8.4l3 3 6.6-7"/>
@@ -389,7 +391,7 @@ function Sparkle() {
 
 // Shared "Product at a glance" body — bullets (+ Good to know) or a spec table,
 // selected by the active content mode.
-function GlanceBody({ mode = 'Normal' }) {
+function GlanceBody({ mode = 'Normal', checkAsset, showGoodToKnow = true }) {
   const m = CONTENT_MODES[mode] || CONTENT_MODES.Normal
   if (m.table) {
     return (
@@ -418,9 +420,9 @@ function GlanceBody({ mode = 'Normal' }) {
   return (
     <>
       <ul className="psum-list">
-        {m.bullets.map((b, i) => <li key={i}><SumCheck />{renderBullet(b)}</li>)}
+        {m.bullets.map((b, i) => <li key={i}><SumCheck src={checkAsset} />{renderBullet(b)}</li>)}
       </ul>
-      {m.goodToKnow && (
+      {showGoodToKnow && m.goodToKnow && (
         <div className="psum-know">
           <p className="psum-know-h">Good to know</p>
           <div className="psum-know-row">
@@ -737,7 +739,7 @@ function DetailsTabs({ mode }) {
             >
               {tab === 'ai' ? (
                 <div className="det-glance">
-                  <span className="det-glance-title">
+                  <span className={`det-glance-title${(CONTENT_MODES[mode]?.title || DEFAULT_GLANCE_TITLE) === DEFAULT_GLANCE_TITLE ? ' det-glance-title--highlight' : ''}`}>
                     {CONTENT_MODES[mode]?.title || DEFAULT_GLANCE_TITLE}
                   </span>
                   <GlanceBody mode={mode} />
@@ -910,7 +912,7 @@ function DetailsAiToggle({ mode }) {
           aria-checked={aiOn}
           onClick={handleToggle}
         >
-          <span className={`ai-mode-label${sweep ? ' sweeping' : ''}`}>AI mode</span>
+          <span className={`ai-mode-label${sweep ? ' sweeping' : ''}`}>AI Summary</span>
           <span ref={toggleRef} className={`ai-toggle${pulse ? ' pulsing' : ''}`}><span className="ai-toggle-knob" /></span>
         </button>
       </div>
@@ -941,6 +943,62 @@ function DetailsAiToggle({ mode }) {
           </div>
           {reveal && <span className="det-layer-ripple" aria-hidden />}
         </motion.div>
+      </div>
+    </section>
+  )
+}
+
+// Option 5: a persistent AI product summary with Nora follow-up prompts.
+// Its body follows the global content mode while the Nora details remain fixed.
+function DetailsNoraSummary({ mode }) {
+  const suggestions = ['Compare models', 'Is it worth buying?', 'Warranty']
+  const [questionActive, setQuestionActive] = useState(false)
+
+  function handleQuestionSubmit(event) {
+    event.preventDefault()
+  }
+
+  return (
+    <section className="nora-summary">
+      <div className="nora-summary-head">
+        <span className="nora-summary-title nora-summary-title--shimmer">Product at a glance</span>
+        <span className="nora-summary-byline">Summarised by AI</span>
+      </div>
+      <div className="nora-summary-content">
+        <GlanceBody mode={mode} checkAsset="/icons/nora-summary-check.svg" showGoodToKnow={false} />
+      </div>
+      <div className="nora-summary-more">
+        <img className="nora-summary-glow" src="/icons/nora-summary-glow.svg" alt="" aria-hidden />
+        <img className="nora-summary-divider" src="/icons/nora-summary-divider.svg" alt="" aria-hidden />
+        <div className="nora-summary-more-head">
+          <span>Know more with nora AI</span>
+        </div>
+        <div className="nora-suggestions">
+          {suggestions.map((suggestion) => (
+            <button className="nora-suggestion" key={suggestion}>
+              <img src="/icons/nora-suggestion-arrow.svg" alt="" aria-hidden />
+              <span>{suggestion}</span>
+            </button>
+          ))}
+        </div>
+        <form className="nora-question" onSubmit={handleQuestionSubmit}>
+          <input
+            type="text"
+            aria-label="Ask Nora about this product"
+            placeholder="Ask me about “Charging specs”"
+            autoComplete="off"
+            enterKeyHint="send"
+            onFocus={() => setQuestionActive(true)}
+          />
+          <button
+            className={`nora-question-send${questionActive ? ' is-active' : ''}`}
+            type="submit"
+            aria-label="Send question"
+            disabled={!questionActive}
+          >
+            <span className="nora-question-send-icon" aria-hidden />
+          </button>
+        </form>
       </div>
     </section>
   )

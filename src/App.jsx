@@ -788,14 +788,14 @@ function DetailsAiToggle({ mode }) {
       T.push(setTimeout(() => setSweep(true), 400))             // gradient sweeps label
       T.push(setTimeout(() => {                                  // gradient reaches toggle
         setSweep(false); setAiOn(true); setPulse(true); setNeutralSurface(true)
-      }, 800))
-      T.push(setTimeout(() => setPulse(false), 1200))
+      }, 900))
+      T.push(setTimeout(() => setPulse(false), 1400))
       // Keep #F9F9FB beneath the summary until the borderless colour ripple
-      // reaches the bottom-left, completing the reveal in 1200ms.
-      T.push(setTimeout(() => setReveal(true), 920))
+      // reaches the bottom-left, completing the reveal in 1050ms.
+      T.push(setTimeout(() => setReveal(true), 1020))
       T.push(setTimeout(() => {
         setReveal(false); setNeutralSurface(false); setIntroDone(true)
-      }, 2120))
+      }, 2070))
     }
     const io = new IntersectionObserver(
       (entries) => { if (entries[0].isIntersecting) { io.disconnect(); run() } },

@@ -734,7 +734,7 @@ input, button, textarea, select { font-family: inherit; }
 /* Option 4 — Product Overview header with an AI-mode toggle */
 .det-head-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; padding: 0 12px; }
 .det-head-row .det-h { margin: 0; padding: 0; }
-.ai-mode { --ai-toggle-speed: 400ms; display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; padding: 0; cursor: pointer; font-family: inherit; }
+.ai-mode { --ai-toggle-speed: 500ms; display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; padding: 0; cursor: pointer; font-family: inherit; }
 /* Off state: blue→purple gradient text (13px semibold). On: flat dark ink. */
 .ai-mode-label {
   font-size: 13px; font-weight: 600; line-height: 20px; letter-spacing: -0.1px;
@@ -774,7 +774,7 @@ input, button, textarea, select { font-family: inherit; }
   background: linear-gradient(116deg, #f3f3fc 0%, #fbf3fc 100%);
   clip-path: circle(0% at 100% 0%);
   will-change: clip-path;
-  animation: ai-fill-in 1200ms cubic-bezier(.22, .61, .36, 1) forwards;
+  animation: ai-fill-in 1050ms cubic-bezier(.22, .61, .36, 1) forwards;
 }
 @keyframes ai-fill-in {
   from { clip-path: circle(0% at 100% 0%); }
@@ -791,12 +791,12 @@ input, button, textarea, select { font-family: inherit; }
   transform: translate(50%, -50%) scale(.02);
   opacity: 0;
   will-change: transform, opacity;
-  animation: ai-ripple-glow 1200ms cubic-bezier(.22, .61, .36, 1) forwards;
+  animation: ai-ripple-glow 1050ms cubic-bezier(.22, .61, .36, 1) forwards;
 }
 @keyframes ai-ripple-glow {
   0% { transform: translate(50%, -50%) scale(.02); opacity: 0; }
-  14% { opacity: .35; }
-  62% { opacity: .26; }
+  14% { opacity: .45; }
+  62% { opacity: .34; }
   100% { transform: translate(50%, -50%) scale(1); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {

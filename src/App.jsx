@@ -767,6 +767,7 @@ function DetailsAiToggle({ mode }) {
   const [sweep, setSweep] = useState(false)
   const [pulse, setPulse] = useState(false)
   const [reveal, setReveal] = useState(false)
+  const [neutralSurface, setNeutralSurface] = useState(false)
   const [introDone, setIntroDone] = useState(false)
   const sectionRef = useRef(null)
   const startedRef = useRef(false)
@@ -784,13 +785,17 @@ function DetailsAiToggle({ mode }) {
         T.push(setTimeout(() => { setAiOn(true); setIntroDone(true) }, 200))
         return
       }
-      T.push(setTimeout(() => setSweep(true), 400))            // gradient sweeps label
-      T.push(setTimeout(() => {                                 // gradient reaches toggle
-        setSweep(false); setAiOn(true); setPulse(true); setReveal(true)
-      }, 1250))
-      T.push(setTimeout(() => setPulse(false), 1650))
-      // colour ripple floods the AI card from its top-right, then settle
-      T.push(setTimeout(() => { setReveal(false); setIntroDone(true) }, 3650))
+      T.push(setTimeout(() => setSweep(true), 400))             // gradient sweeps label
+      T.push(setTimeout(() => {                                  // gradient reaches toggle
+        setSweep(false); setAiOn(true); setPulse(true); setNeutralSurface(true)
+      }, 800))
+      T.push(setTimeout(() => setPulse(false), 1200))
+      // Keep #F9F9FB beneath the summary until the borderless colour ripple
+      // reaches the bottom-left, completing the reveal in 1200ms.
+      T.push(setTimeout(() => setReveal(true), 920))
+      T.push(setTimeout(() => {
+        setReveal(false); setNeutralSurface(false); setIntroDone(true)
+      }, 2120))
     }
     const io = new IntersectionObserver(
       (entries) => { if (entries[0].isIntersecting) { io.disconnect(); run() } },
@@ -824,7 +829,7 @@ function DetailsAiToggle({ mode }) {
         </button>
       </div>
       <div className="det-body det-body--nofoot">
-        <motion.div className="det-swap" layout transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }}>
+        <motion.div className="det-swap" layout transition={{ duration: 0.35, ease: [0.22, 0.61, 0.36, 1] }}>
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.div
               key={aiOn ? 'ai' : 'normal'}
@@ -832,10 +837,10 @@ function DetailsAiToggle({ mode }) {
               initial={variants.initial}
               animate={variants.animate}
               exit={variants.exit}
-              transition={{ duration: reduce ? 0.2 : 0.8, ease: [0.22, 0.61, 0.36, 1] }}
+              transition={{ duration: reduce ? 0.2 : 1, ease: [0.22, 0.61, 0.36, 1] }}
             >
               {aiOn ? (
-                <div className={`det-glance${reveal ? ' det-glance--intro' : ''}`}>
+                <div className={`det-glance${neutralSurface ? ' det-glance--intro' : ''}`}>
                   {reveal && <span className="det-glance-fill" aria-hidden />}
                   {reveal && <span className="det-glance-ripple" aria-hidden />}
                   <span className="det-glance-title">Summarized by nora AI</span>

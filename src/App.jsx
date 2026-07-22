@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion'
+import { AnimatePresence, motion, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import { Retune } from 'retune'
 
 const MOTION = { type: 'tween', ease: 'linear', duration: 0.18 }
@@ -53,9 +53,6 @@ function PDP() {
       <div className="pdp-scroll" ref={scrollRef}>
         <Gallery imgScale={imgScale} imgOpacity={imgOpacity} />
         <div className="pdp-sections">
-          {summaryOption === 4 && (
-            <SummaryWidget onOpen={() => setSheetOpen(true)} />
-          )}
           {summaryOption === 2 && (
             <Option2Summary onOpen={() => setSheetOpen(true)} />
           )}
@@ -72,7 +69,7 @@ function PDP() {
         </div>
       </div>
       <BottomNav />
-      {(summaryOption === 4 || summaryOption === 2) && (
+      {summaryOption === 2 && (
         <SummarySheet open={sheetOpen} onClose={() => setSheetOpen(false)} mode={contentMode} />
       )}
     </div>
@@ -304,9 +301,10 @@ function Delivery() {
 
 /* --------------------- Product at a glance (AI summary) -------------------- */
 // Content modes selected by the toggle below the top bar. Each mode swaps the
-// "Product at a glance" body: Normal = plain bullets, Focus = the same bullets
-// with the key phrase emphasised, Pair = a compact spec table. "Good to know"
-// rides along with the bullet modes; Pair is table-only.
+// summary body: Normal = plain bullets, Focus = the same bullets with the key
+// phrase emphasised, Pair = a compact spec table, Head-sub = starred items with
+// a bold head + descriptive sub-line (titled "Key summary"). "Good to know"
+// rides along with the bullet modes; Pair/Head-sub carry their own last line.
 const CONTENT_MODES = {
   Normal: {
     bullets: [
@@ -337,8 +335,18 @@ const CONTENT_MODES = {
       ['Technology', 'GaN + PPS'],
     ],
   },
+  'Head-sub': {
+    title: 'Key summary',
+    items: [
+      ['Power 3 devices:', ' 65W fast charging for up to three devices simultaneously.'],
+      ['Broad compatibility:', ' Works with MacBook, iPhone, Samsung, and other USB-C devices.'],
+      ['Travel-ready design:', ' Compact GaN charger with efficient cooling.'],
+      ['Keep in mind:', ' 240V power not supported'],
+    ],
+  },
 }
-const CONTENT_TABS = ['Normal', 'Focus', 'Pair']
+const CONTENT_TABS = ['Normal', 'Focus', 'Pair', 'Head-sub']
+const DEFAULT_GLANCE_TITLE = 'Product at a glance'
 
 function renderBullet(parts) {
   return parts.map(([t, bold], i) => (bold ? <b key={i}>{t}</b> : <span key={i}>{t}</span>))
@@ -362,6 +370,23 @@ function InfoCircle() {
   )
 }
 
+function Sparkle() {
+  return (
+    <svg className="psum-star" width="10" height="20" viewBox="0 0 10 20" fill="none" aria-hidden>
+      <path
+        fill="url(#psum-star-grad)"
+        d="M5.3842 6.20401C5.2523 5.84703 4.7477 5.84703 4.6158 6.20401C4.04161 7.75541 2.81856 8.97845 1.26773 9.55208C0.910756 9.68398 0.910756 10.1886 1.26773 10.3205C2.81913 10.8947 4.04217 12.1177 4.6158 13.6685C4.7477 14.0255 5.2523 14.0255 5.3842 13.6685C5.9584 12.1172 7.18144 10.8941 8.73227 10.3205C9.08924 10.1886 9.08924 9.68398 8.73227 9.55208C7.18087 8.97788 5.95783 7.75484 5.3842 6.20401Z"
+      />
+      <defs>
+        <linearGradient id="psum-star-grad" x1="5" y1="5.93628" x2="5" y2="13.9363" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#E96CC4" />
+          <stop offset="1" stopColor="#B06DFF" />
+        </linearGradient>
+      </defs>
+    </svg>
+  )
+}
+
 // Shared "Product at a glance" body — bullets (+ Good to know) or a spec table,
 // selected by the active content mode.
 function GlanceBody({ mode = 'Normal' }) {
@@ -376,6 +401,18 @@ function GlanceBody({ mode = 'Normal' }) {
           </div>
         ))}
       </div>
+    )
+  }
+  if (m.items) {
+    return (
+      <ul className="psum-list psum-list--headsub">
+        {m.items.map(([head, sub], i) => (
+          <li key={i}>
+            <Sparkle />
+            <span><b className="psum-headsub-head">{head}</b>{sub}</span>
+          </li>
+        ))}
+      </ul>
     )
   }
   return (
@@ -415,26 +452,10 @@ function ProductGlance({ mode }) {
   )
 }
 
-/* --------------- Option 4: floating summary widget + sheet --------------- */
+/* --------------- Option 2: below-image summary widget + sheet --------------- */
 const WIDGET_TEASER = 'Fast GaN charger with 3-device charging, laptop support and travel-ready design.'
 
-function SummaryWidget({ onOpen }) {
-  const streamedRef = useRef(false)
-  return (
-    <div className="sumw" role="button" tabIndex={0} onClick={onOpen}>
-      <img className="ai-glow" src="/icons/ai-glow.svg" alt="" aria-hidden />
-      <div className="sumw-top">
-        <span className="sumw-label">
-          Product summary
-          <Chev className="sumw-chev" />
-        </span>
-      </div>
-      <StreamingTeaser text={WIDGET_TEASER} streamedRef={streamedRef} className="sumw-teaser" />
-    </div>
-  )
-}
-
-// Option 2: same product-summary widget but placed below the gallery (in flow,
+// Option 2: product-summary widget placed below the gallery (in flow,
 // not overlapping). Streams a teaser first, then collapses to a compact
 // title-only row 3s after the text finishes — or immediately when tapped.
 // Tapping also opens the full summary sheet.
@@ -713,7 +734,9 @@ function DetailsTabs({ mode }) {
             >
               {tab === 'ai' ? (
                 <div className="det-glance">
-                  <span className="det-glance-title">Product at a glance</span>
+                  <span className="det-glance-title">
+                    {CONTENT_MODES[mode]?.title || DEFAULT_GLANCE_TITLE}
+                  </span>
                   <GlanceBody mode={mode} />
                 </div>
               ) : (
@@ -730,8 +753,110 @@ function DetailsTabs({ mode }) {
   )
 }
 
+// Option 4: Product Overview with an "AI mode" toggle in the header. ON shows
+// the AI summary ("Summarized by nora AI"); OFF shows the normal accordions.
+//
+// The first time the section reaches ~50% visibility it plays a one-shot
+// onboarding sequence that introduces AI mode: the label gradient sweeps toward
+// the toggle, the toggle flips ON with a pulse, a soft ripple flows across the
+// card, the accordions dissolve and the AI summary rises in. After it finishes
+// (or under prefers-reduced-motion) the toggle is a plain interactive crossfade.
+function DetailsAiToggle({ mode }) {
+  const reduce = useReducedMotion()
+  const [aiOn, setAiOn] = useState(false)
+  const [sweep, setSweep] = useState(false)
+  const [pulse, setPulse] = useState(false)
+  const [reveal, setReveal] = useState(false)
+  const [introDone, setIntroDone] = useState(false)
+  const sectionRef = useRef(null)
+  const startedRef = useRef(false)
+  const timersRef = useRef([])
+
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    const run = () => {
+      if (startedRef.current) return
+      startedRef.current = true
+      const T = timersRef.current
+      if (reduce) {
+        // Reduced motion: skip the flourish, just crossfade AI mode on.
+        T.push(setTimeout(() => { setAiOn(true); setIntroDone(true) }, 200))
+        return
+      }
+      T.push(setTimeout(() => setSweep(true), 400))            // gradient sweeps label
+      T.push(setTimeout(() => {                                 // gradient reaches toggle
+        setSweep(false); setAiOn(true); setPulse(true); setReveal(true)
+      }, 1250))
+      T.push(setTimeout(() => setPulse(false), 1650))
+      // colour ripple floods the AI card from its top-right, then settle
+      T.push(setTimeout(() => { setReveal(false); setIntroDone(true) }, 3650))
+    }
+    const io = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) { io.disconnect(); run() } },
+      { threshold: 0.5 }
+    )
+    io.observe(el)
+    return () => { io.disconnect(); timersRef.current.forEach(clearTimeout) }
+  }, [reduce])
+
+  const introActive = !introDone
+  const variants = reduce
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
+    : {
+        initial: { opacity: 0, y: 8, scale: 0.98 },
+        animate: { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' },
+        exit: { opacity: 0, y: 6, scale: 0.98, filter: introActive ? 'blur(4px)' : 'blur(0px)' },
+      }
+
+  return (
+    <section className="card details det-card" ref={sectionRef}>
+      <div className="det-head-row">
+        <h3 className="section-h det-h">Product Overview</h3>
+        <button
+          className={`ai-mode${aiOn ? ' on' : ''}`}
+          role="switch"
+          aria-checked={aiOn}
+          onClick={() => setAiOn((v) => !v)}
+        >
+          <span className={`ai-mode-label${sweep ? ' sweeping' : ''}`}>AI mode</span>
+          <span className={`ai-toggle${pulse ? ' pulsing' : ''}`}><span className="ai-toggle-knob" /></span>
+        </button>
+      </div>
+      <div className="det-body det-body--nofoot">
+        <motion.div className="det-swap" layout transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }}>
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={aiOn ? 'ai' : 'normal'}
+              style={{ width: '100%' }}
+              initial={variants.initial}
+              animate={variants.animate}
+              exit={variants.exit}
+              transition={{ duration: reduce ? 0.2 : 0.8, ease: [0.22, 0.61, 0.36, 1] }}
+            >
+              {aiOn ? (
+                <div className={`det-glance${reveal ? ' det-glance--intro' : ''}`}>
+                  {reveal && <span className="det-glance-fill" aria-hidden />}
+                  {reveal && <span className="det-glance-ripple" aria-hidden />}
+                  <span className="det-glance-title">Summarized by nora AI</span>
+                  <GlanceBody mode={mode} />
+                </div>
+              ) : (
+                <div className="det-all">
+                  <DetailAccordions />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
 function ProductDetails({ summaryOption, contentMode }) {
   if (summaryOption === 3) return <DetailsTabs mode={contentMode} />
+  if (summaryOption === 4) return <DetailsAiToggle mode={contentMode} />
   return (
     <section className="card details">
       <h3 className="section-h">Product Details</h3>

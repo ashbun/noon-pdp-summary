@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import { Retune } from 'retune'
 
@@ -717,7 +717,10 @@ function DetailsTabs({ mode }) {
       <h3 className="section-h det-h">Product Details</h3>
       <div className="det-body">
         <div className="mswitch det-switch" role="tablist" aria-label="Product details view">
-          <button className={`mswitch-seg${tab === 'ai' ? ' on' : ''}`} role="tab" aria-selected={tab === 'ai'} onClick={() => setTab('ai')}>AI Summary</button>
+          <button className={`mswitch-seg mswitch-seg--ai${tab === 'ai' ? ' on' : ''}`} role="tab" aria-selected={tab === 'ai'} onClick={() => setTab('ai')}>
+            <img className="mswitch-ai-icon" src="/icons/ai-summary-sparkles.svg" alt="" aria-hidden />
+            <span>AI Summary</span>
+          </button>
           <button className={`mswitch-seg${tab === 'all' ? ' on' : ''}`} role="tab" aria-selected={tab === 'all'} onClick={() => setTab('all')}>All details</button>
         </div>
         {/* Only the middle panel morphs between tabs — the height eases and the
@@ -767,11 +770,65 @@ function DetailsAiToggle({ mode }) {
   const [sweep, setSweep] = useState(false)
   const [pulse, setPulse] = useState(false)
   const [reveal, setReveal] = useState(false)
-  const [neutralSurface, setNeutralSurface] = useState(false)
-  const [introDone, setIntroDone] = useState(false)
+  const [revealed, setRevealed] = useState(false)
+  const [layerHeights, setLayerHeights] = useState({ initial: 0, summary: 0 })
+  const [maskMetrics, setMaskMetrics] = useState({ x: 0, y: 0, radius: 480 })
   const sectionRef = useRef(null)
+  const toggleRef = useRef(null)
+  const stackRef = useRef(null)
+  const initialLayerRef = useRef(null)
+  const summaryLayerRef = useRef(null)
   const startedRef = useRef(false)
   const timersRef = useRef([])
+
+  const updateMaskMetrics = () => {
+    const toggle = toggleRef.current
+    const stack = stackRef.current
+    const summary = summaryLayerRef.current
+    if (!toggle || !stack || !summary) return
+
+    const toggleRect = toggle.getBoundingClientRect()
+    const stackRect = stack.getBoundingClientRect()
+    const summaryHeight = summary.getBoundingClientRect().height
+    // The ON-position thumb center sits 8px in from the track's right edge.
+    const x = toggleRect.right - 8 - stackRect.left
+    const y = toggleRect.top + toggleRect.height / 2 - stackRect.top
+    const width = stackRect.width
+    const height = Math.max(summaryHeight, stackRect.height)
+    const radius = Math.ceil(Math.max(
+      Math.hypot(x, y),
+      Math.hypot(width - x, y),
+      Math.hypot(x, height - y),
+      Math.hypot(width - x, height - y),
+    ) + 36)
+    setMaskMetrics({ x, y, radius })
+  }
+
+  useLayoutEffect(() => {
+    const initialLayer = initialLayerRef.current
+    const summaryLayer = summaryLayerRef.current
+    if (!initialLayer || !summaryLayer) return
+
+    const update = () => {
+      const next = {
+        initial: Math.ceil(initialLayer.getBoundingClientRect().height),
+        summary: Math.ceil(summaryLayer.getBoundingClientRect().height),
+      }
+      setLayerHeights((current) => (
+        current.initial === next.initial && current.summary === next.summary ? current : next
+      ))
+      updateMaskMetrics()
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(initialLayer)
+    observer.observe(summaryLayer)
+    window.addEventListener('resize', update)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', update)
+    }
+  }, [mode])
 
   useEffect(() => {
     const el = sectionRef.current
@@ -781,21 +838,22 @@ function DetailsAiToggle({ mode }) {
       startedRef.current = true
       const T = timersRef.current
       if (reduce) {
-        // Reduced motion: skip the flourish, just crossfade AI mode on.
-        T.push(setTimeout(() => { setAiOn(true); setIntroDone(true) }, 200))
+        // Reduced motion: skip the flourish and expose the AI layer directly.
+        T.push(setTimeout(() => {
+          updateMaskMetrics(); setAiOn(true); setRevealed(true)
+        }, 200))
         return
       }
       T.push(setTimeout(() => setSweep(true), 400))             // gradient sweeps label
       T.push(setTimeout(() => {                                  // gradient reaches toggle
-        setSweep(false); setAiOn(true); setPulse(true); setNeutralSurface(true)
+        updateMaskMetrics(); setSweep(false); setAiOn(true); setPulse(true); setReveal(true); setRevealed(false)
       }, 900))
       T.push(setTimeout(() => setPulse(false), 1400))
-      // Keep #F9F9FB beneath the summary until the borderless colour ripple
-      // reaches the bottom-left, completing the reveal in 1050ms.
-      T.push(setTimeout(() => setReveal(true), 1020))
+      // Reveal the second layer from the thumb center; the ripple shares this
+      // exact origin, radius, easing, and 800ms duration.
       T.push(setTimeout(() => {
-        setReveal(false); setNeutralSurface(false); setIntroDone(true)
-      }, 2070))
+        setReveal(false); setRevealed(true)
+      }, 1700))
     }
     const io = new IntersectionObserver(
       (entries) => { if (entries[0].isIntersecting) { io.disconnect(); run() } },
@@ -805,14 +863,42 @@ function DetailsAiToggle({ mode }) {
     return () => { io.disconnect(); timersRef.current.forEach(clearTimeout) }
   }, [reduce])
 
-  const introActive = !introDone
-  const variants = reduce
-    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
-    : {
-        initial: { opacity: 0, y: 8, scale: 0.98 },
-        animate: { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' },
-        exit: { opacity: 0, y: 6, scale: 0.98, filter: introActive ? 'blur(4px)' : 'blur(0px)' },
-      }
+  const handleToggle = () => {
+    timersRef.current.forEach(clearTimeout)
+    timersRef.current = []
+    startedRef.current = true
+    setSweep(false)
+    setPulse(false)
+    setReveal(false)
+
+    if (aiOn) {
+      setAiOn(false)
+      setRevealed(false)
+      return
+    }
+
+    updateMaskMetrics()
+    setAiOn(true)
+    if (reduce) {
+      setRevealed(true)
+      return
+    }
+    setPulse(true)
+    setReveal(true)
+    setRevealed(false)
+    timersRef.current.push(setTimeout(() => setPulse(false), 500))
+    timersRef.current.push(setTimeout(() => {
+      setReveal(false); setRevealed(true)
+    }, 800))
+  }
+
+  const activeHeight = aiOn ? layerHeights.summary : layerHeights.initial
+  const stackStyle = {
+    '--ai-mask-origin-x': `${maskMetrics.x}px`,
+    '--ai-mask-origin-y': `${maskMetrics.y}px`,
+    '--ai-mask-max-radius': `${maskMetrics.radius}px`,
+    height: activeHeight || 0,
+  }
 
   return (
     <section className="card details det-card" ref={sectionRef}>
@@ -822,37 +908,38 @@ function DetailsAiToggle({ mode }) {
           className={`ai-mode${aiOn ? ' on' : ''}`}
           role="switch"
           aria-checked={aiOn}
-          onClick={() => setAiOn((v) => !v)}
+          onClick={handleToggle}
         >
           <span className={`ai-mode-label${sweep ? ' sweeping' : ''}`}>AI mode</span>
-          <span className={`ai-toggle${pulse ? ' pulsing' : ''}`}><span className="ai-toggle-knob" /></span>
+          <span ref={toggleRef} className={`ai-toggle${pulse ? ' pulsing' : ''}`}><span className="ai-toggle-knob" /></span>
         </button>
       </div>
       <div className="det-body det-body--nofoot">
-        <motion.div className="det-swap" layout transition={{ duration: 0.35, ease: [0.22, 0.61, 0.36, 1] }}>
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={aiOn ? 'ai' : 'normal'}
-              style={{ width: '100%' }}
-              initial={variants.initial}
-              animate={variants.animate}
-              exit={variants.exit}
-              transition={{ duration: reduce ? 0.2 : 1, ease: [0.22, 0.61, 0.36, 1] }}
-            >
-              {aiOn ? (
-                <div className={`det-glance${neutralSurface ? ' det-glance--intro' : ''}`}>
-                  {reveal && <span className="det-glance-fill" aria-hidden />}
-                  {reveal && <span className="det-glance-ripple" aria-hidden />}
-                  <span className="det-glance-title">Summarized by nora AI</span>
-                  <GlanceBody mode={mode} />
-                </div>
-              ) : (
-                <div className="det-all">
-                  <DetailAccordions />
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
+        <motion.div
+          ref={stackRef}
+          className="det-swap det-layer-stack"
+          style={stackStyle}
+        >
+          <div
+            ref={initialLayerRef}
+            className={`det-layer det-layer--initial${reveal ? ' is-fading' : ''}${revealed ? ' is-hidden' : ''}`}
+            aria-hidden={aiOn}
+            inert={aiOn ? '' : undefined}
+          >
+            <div className="det-all"><DetailAccordions /></div>
+          </div>
+          <div
+            ref={summaryLayerRef}
+            className={`det-layer det-layer--summary${aiOn ? ' is-active' : ''}${reveal ? ' is-revealing' : ''}${revealed ? ' is-revealed' : ''}`}
+            aria-hidden={!aiOn}
+            inert={aiOn ? undefined : ''}
+          >
+            <div className="det-glance">
+              <span className="det-glance-title">Summarized by nora AI</span>
+              <GlanceBody mode={mode} />
+            </div>
+          </div>
+          {reveal && <span className="det-layer-ripple" aria-hidden />}
         </motion.div>
       </div>
     </section>

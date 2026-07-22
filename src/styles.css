@@ -108,6 +108,8 @@ input, button, textarea, select { font-family: inherit; }
   background: #fff; color: var(--ink-900); border-color: #fff;
   box-shadow: 0 1px 3px rgba(34, 34, 34, .1);
 }
+.mswitch-seg--ai { display: inline-flex; align-items: center; justify-content: center; gap: 2px; }
+.mswitch-ai-icon { display: block; width: 16px; height: 16px; flex: 0 0 16px; }
 /* Content-mode toggle sits over the gallery, just below the top nav */
 .content-toggle {
   margin: 4px 12px 0;
@@ -753,7 +755,7 @@ input, button, textarea, select { font-family: inherit; }
 .ai-toggle.pulsing { animation: ai-toggle-pulse var(--ai-toggle-speed) ease; }
 @keyframes ai-toggle-pulse {
   0% { transform: scale(1); }
-  50% { transform: scale(1.08); }
+  50% { transform: scale(1.12); }
   100% { transform: scale(1); }
 }
 /* Onboarding: gradient sweep flowing left→right across the "AI mode" label */
@@ -766,45 +768,81 @@ input, button, textarea, select { font-family: inherit; }
   from { background-position: 100% 50%; }
   to { background-position: 0% 50%; }
 }
-/* The AI summary first settles on a neutral surface. The expanding ripple then
-   reveals the resting gradient from the top-right toward the bottom-left. */
-.det-glance.det-glance--intro { background: #f9f9fb; }
-.det-glance-fill {
-  position: absolute; inset: 0; z-index: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(116deg, #f3f3fc 0%, #fbf3fc 100%);
-  clip-path: circle(0% at 100% 0%);
-  will-change: clip-path;
-  animation: ai-fill-in 1050ms cubic-bezier(.22, .61, .36, 1) forwards;
+/* The two Product Overview states remain mounted as stacked layers. The AI
+   layer is exposed by a feathered circular mask centered on the ON-state thumb. */
+@property --ai-reveal-radius {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
 }
-@keyframes ai-fill-in {
-  from { clip-path: circle(0% at 100% 0%); }
-  to { clip-path: circle(150% at 100% 0%); }
+.det-layer-stack {
+  isolation: isolate;
+  transition: height 350ms cubic-bezier(.22, .61, .36, 1);
 }
-.det-glance-ripple {
-  position: absolute; top: 0; right: 0; z-index: 1; pointer-events: none;
-  width: 250%; aspect-ratio: 1; border-radius: 50%;
-  background: radial-gradient(circle,
-    rgba(65, 70, 206, .12) 0%,
-    rgba(176, 109, 255, .1) 34%,
-    rgba(233, 108, 196, .07) 58%,
-    rgba(233, 108, 196, 0) 74%);
-  transform: translate(50%, -50%) scale(.02);
-  opacity: 0;
-  will-change: transform, opacity;
-  animation: ai-ripple-glow 1050ms cubic-bezier(.22, .61, .36, 1) forwards;
+.det-layer { position: absolute; inset: 0 0 auto; width: 100%; }
+.det-layer--initial { --ai-reveal-radius: 0px; z-index: 1; }
+.det-layer--initial.is-fading {
+  -webkit-mask-image: radial-gradient(
+    circle var(--ai-reveal-radius) at var(--ai-mask-origin-x) var(--ai-mask-origin-y),
+    transparent 0%, transparent 72%, rgba(0,0,0,.18) 82%, rgba(0,0,0,.68) 93%, #000 100%
+  );
+  mask-image: radial-gradient(
+    circle var(--ai-reveal-radius) at var(--ai-mask-origin-x) var(--ai-mask-origin-y),
+    transparent 0%, transparent 72%, rgba(0,0,0,.18) 82%, rgba(0,0,0,.68) 93%, #000 100%
+  );
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  animation: det-layer-radius 800ms cubic-bezier(.17, .12, .25, 1) forwards;
 }
-@keyframes ai-ripple-glow {
-  0% { transform: translate(50%, -50%) scale(.02); opacity: 0; }
+.det-layer--initial.is-hidden { opacity: 0; }
+.det-layer--summary {
+  --ai-reveal-radius: 0px;
+  z-index: 2; opacity: 0; visibility: hidden; pointer-events: none;
+  -webkit-mask-image: radial-gradient(
+    circle var(--ai-reveal-radius) at var(--ai-mask-origin-x) var(--ai-mask-origin-y),
+    #000 0%, #000 72%, rgba(0,0,0,.82) 82%, rgba(0,0,0,.32) 93%, transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle var(--ai-reveal-radius) at var(--ai-mask-origin-x) var(--ai-mask-origin-y),
+    #000 0%, #000 72%, rgba(0,0,0,.82) 82%, rgba(0,0,0,.32) 93%, transparent 100%
+  );
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+.det-layer--summary.is-active { opacity: 1; visibility: visible; pointer-events: auto; }
+.det-layer--summary.is-revealing {
+  animation: det-layer-radius 800ms cubic-bezier(.17, .12, .25, 1) forwards;
+}
+.det-layer--summary.is-revealed { -webkit-mask-image: none; mask-image: none; }
+@keyframes det-layer-radius {
+  from { --ai-reveal-radius: 0px; }
+  to { --ai-reveal-radius: var(--ai-mask-max-radius); }
+}
+
+/* A soft gradient ripple follows the same radius animation as the mask. */
+.det-layer-ripple {
+  --ai-reveal-radius: 0px;
+  position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+  background: radial-gradient(
+    circle var(--ai-reveal-radius) at var(--ai-mask-origin-x) var(--ai-mask-origin-y),
+    transparent 0%, transparent 70%, rgba(65,70,206,.08) 79%,
+    rgba(176,109,255,.12) 86%, rgba(233,108,196,.08) 92%, transparent 100%
+  );
+  will-change: opacity;
+  animation:
+    det-layer-radius 800ms cubic-bezier(.17, .12, .25, 1) forwards,
+    det-layer-ripple-opacity 800ms cubic-bezier(.17, .12, .25, 1) forwards;
+}
+@keyframes det-layer-ripple-opacity {
+  0% { opacity: 0; }
   14% { opacity: .45; }
   62% { opacity: .34; }
-  100% { transform: translate(50%, -50%) scale(1); opacity: 0; }
+  100% { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ai-mode-label.sweeping { animation: none; }
   .ai-toggle.pulsing { animation: none; }
-  .det-glance.det-glance--intro { background: linear-gradient(116deg, #f3f3fc 0%, #fbf3fc 100%); }
-  .det-glance-fill { clip-path: none; animation: none; }
-  .det-glance-ripple { display: none; }
+  .det-layer-stack { transition-duration: 200ms; }
+  .det-layer--summary.is-active { -webkit-mask-image: none; mask-image: none; }
+  .det-layer-ripple { display: none; }
 }
 .det-switch { width: 100%; margin: 0; }
 .det-swap { position: relative; overflow: hidden; }
@@ -819,8 +857,6 @@ input, button, textarea, select { font-family: inherit; }
   padding: 12px 0; border-radius: 12px; overflow: hidden;
   background: linear-gradient(116deg, #f3f3fc 0%, #fbf3fc 100%);
 }
-/* Keep card content above the colour-reveal + ripple overlays */
-.det-glance > :not(.det-glance-fill):not(.det-glance-ripple) { position: relative; z-index: 2; }
 .det-glance-title {
   padding: 0 12px; font-size: 15px; font-weight: 700; letter-spacing: -0.14px;
   background: linear-gradient(90deg, #4146ce 0%, #bf3deb 54.54%);

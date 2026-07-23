@@ -673,7 +673,7 @@ function StreamingTeaser({ text, streamedRef, className, onDone }) {
 }
 
 function DetailAccordions() {
-  const rows = ['Overview', 'Highlights', 'Specifications']
+  const rows = ['Description', 'Highlights', 'Specifications']
   const [open, setOpen] = useState(null)
   return (
     <>

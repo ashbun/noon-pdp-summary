@@ -849,13 +849,13 @@ input, button, textarea, select { font-family: inherit; }
 .det-all { display: flex; flex-direction: column; }
 
 /* AI-summary body sits inside a soft blue→purple gradient card. Endpoint
-   colours sampled from Figma: persian-blue tint (#f3f3fc) → purple tint
-   (#fbf3fc) on a 116° diagonal. */
+   colours are the brand persian-blue (#4146ce) → purple (#bf3deb) at 4%
+   opacity on a 116° diagonal. */
 .det-glance {
   position: relative;
   display: flex; flex-direction: column; gap: 8px;
   padding: 12px 0; border-radius: 12px; overflow: hidden;
-  background: linear-gradient(116deg, #f3f3fc 0%, #fbf3fc 100%);
+  background: linear-gradient(116deg, rgba(65,70,206,.04) 0%, rgba(191,61,235,.04) 100%);
 }
 .det-glance-title {
   padding: 0 12px; font-size: 15px; font-weight: 700; letter-spacing: -0.14px;

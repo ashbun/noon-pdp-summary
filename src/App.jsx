@@ -148,7 +148,7 @@ function TopNav({ state = 1, onBack, center }) {
 function StatusBar({ summaryOption, onSummaryOption, contentMode, onContentMode }) {
   const toggle = (
     <div className="summary-toggle" role="group" aria-label="Product summary design">
-      {[3, 4, 5, 1, 2].map((n) => (
+      {[3, 5, 2, 1, 4].map((n) => (
         <button
           key={n}
           className={`summary-toggle-btn${summaryOption === n ? ' on' : ''}`}

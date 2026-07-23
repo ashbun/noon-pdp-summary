@@ -24,7 +24,7 @@ export default function App() {
 function PDP() {
   const [summaryOption, setSummaryOption] = useState(1)
   const [sheetOpen, setSheetOpen] = useState(false)
-  // Global content mode (Normal / Focus / Pair) chosen from the toggle below the
+  // Global content mode (Normal / Head-sub) chosen from the toggle below the
   // top bar. It swaps the "Product at a glance" body across every option.
   const [contentMode, setContentMode] = useState('Normal')
 
@@ -346,7 +346,7 @@ const CONTENT_MODES = {
     ],
   },
 }
-const CONTENT_TABS = ['Normal', 'Focus', 'Pair', 'Head-sub']
+const CONTENT_TABS = ['Normal', 'Head-sub']
 const DEFAULT_GLANCE_TITLE = 'Product at a glance'
 
 function renderBullet(parts) {

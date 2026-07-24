@@ -22,7 +22,7 @@ export default function App() {
 }
 
 function PDP() {
-  const [summaryOption, setSummaryOption] = useState(1)
+  const [summaryOption, setSummaryOption] = useState(3)
   const [sheetOpen, setSheetOpen] = useState(false)
   // Global content mode (Normal / Head-sub) chosen from the toggle below the
   // top bar. It swaps the "Product at a glance" body across every option.

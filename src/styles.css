@@ -458,12 +458,12 @@ input, button, textarea, select { font-family: inherit; }
   100% { background-position: 0% 0; }
 }
 .psum-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.psum-list li { display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-700); letter-spacing: -0.1px; }
+.psum-list li { display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-900); letter-spacing: -0.1px; }
 .psum-check { display: block; width: 16px; height: 16px; flex: 0 0 16px; }
 .psum-know { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .psum-know-h { margin: 0; padding: 6px 12px 0; font-size: 13px; font-weight: 700; line-height: 20px; color: var(--ink-900); letter-spacing: -0.1px; }
 .psum-know-row { display: flex; align-items: center; gap: 8px; padding: 0 12px; margin-bottom: 4px; font-size: 13px; font-weight: 400; line-height: 20px; color: var(--ink-700); letter-spacing: -0.1px; }
-.psum-info { flex: 0 0 auto; color: #9FA2EF; }
+.psum-info { flex: 0 0 auto; color: #757ADB; }
 /* Head-sub content mode — starred items with a bold head + descriptive sub */
 .psum-list--headsub { gap: 10px; }
 .psum-list--headsub li,
@@ -877,8 +877,8 @@ input, button, textarea, select { font-family: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .det-glance-title--highlight { animation: none; background-position: 50% 50%; }
 }
-.det-glance .psum-list { margin: 0; gap: 10px; }
-.det-glance .psum-list li { padding: 0 12px; font-size: 14px; line-height: 18px; color: var(--ink-700); }
+.det-glance .psum-list { margin: 0; gap: 12px; }
+.det-glance .psum-list li { padding: 0 12px; font-size: 14px; line-height: 18px; color: var(--ink-900); }
 .det-glance .psum-know { margin-top: 8px; gap: 8px; }
 .det-glance .psum-know-h { padding: 0 12px; font-size: 14px; line-height: 18px; }
 .det-glance .psum-know-row { margin: 0; padding: 0 12px; font-size: 14px; line-height: 18px; }
@@ -925,19 +925,30 @@ input, button, textarea, select { font-family: inherit; }
 .nora-summary-content .psum-list { margin-top: 12px; gap: 8px; }
 .nora-summary-content .psum-list li { padding: 0 12px; }
 .nora-summary-content .psum-table { padding-top: 12px; }
+/* Option 5 center: bullets sit inside a blue→purple 4% gradient card.
+   Gradient sampled exactly from Figma node 22210:159537. */
+.nora-glance-card {
+  margin: 10px 12px 0; padding: 12px 8px 12px 0; border-radius: 12px; overflow: hidden;
+  background:
+    linear-gradient(127.04deg, rgba(65,70,206,.04) 1.84%, rgba(191,61,235,.04) 98.68%),
+    #fff;
+}
+.nora-glance-card .psum-list { margin: 0; gap: 8px; }
+.nora-glance-card .psum-list li { padding: 0 4px 0 8px; gap: 4px; font-size: 14px; line-height: 20px; color: var(--ink-900); }
+.psum-star-img { display: block; width: 20px; height: 20px; flex: 0 0 20px; }
 .nora-summary-more {
-  position: relative; overflow: hidden; margin-top: 16px; padding: 11px 0 12px;
+  position: relative; overflow: hidden; margin-top: 4px; padding: 11px 0 12px;
 }
 .nora-summary-glow {
-  position: absolute; z-index: 0; left: -113px; top: 14px; width: 570px; height: 282px;
-  pointer-events: none;
+  position: absolute; z-index: 0; left: -113px; top: 22px; width: 570px; height: 282px;
+  pointer-events: none; opacity: 0.9;
 }
 .nora-summary-divider {
   position: absolute; z-index: 1; top: 0; left: 12px; width: calc(100% - 24px); height: 1px;
 }
 .nora-summary-more-head {
   position: relative; z-index: 1; display: flex; align-items: center;
-  height: 20px; padding: 0 12px; font-size: 13px; font-weight: 600; line-height: 20px;
+  height: 20px; padding: 0 12px; font-size: 14px; font-weight: 600; line-height: 20px;
   letter-spacing: -0.1px; color: var(--ink-900);
 }
 .nora-suggestions {
@@ -948,7 +959,7 @@ input, button, textarea, select { font-family: inherit; }
 .nora-suggestion {
   display: inline-flex; align-items: center; gap: 4px; height: 32px; flex: 0 0 auto;
   padding: 0 12px; border: 1px solid #fbf0fe; border-radius: 16px; background: #fff;
-  font-family: inherit; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--ink-700);
+  font-family: inherit; font-size: 14px; font-weight: 500; line-height: 18px; color: var(--ink-700);
   cursor: pointer;
 }
 .nora-suggestion img { display: block; width: 7px; height: 7.5px; flex: 0 0 auto; }

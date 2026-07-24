@@ -347,7 +347,6 @@ const CONTENT_MODES = {
   },
 }
 const CONTENT_TABS = ['Normal', 'Head-sub']
-const DEFAULT_GLANCE_TITLE = 'Product at a glance'
 
 function renderBullet(parts) {
   return parts.map(([t, bold], i) => (bold ? <b key={i}>{t}</b> : <span key={i}>{t}</span>))
@@ -357,7 +356,7 @@ function SumCheck({ src }) {
   if (src) return <img className="psum-check" src={src} alt="" aria-hidden />
   return (
     <svg className="psum-check" width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-      <path fill="none" stroke="#9FA2EF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M3.2 8.4l3 3 6.6-7"/>
+      <path fill="none" stroke="#757ADB" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M3.2 8.4l3 3 6.6-7"/>
     </svg>
   )
 }
@@ -389,10 +388,54 @@ function Sparkle() {
   )
 }
 
+// A summary point that types in one character at a time (trailing characters
+// fade 10% -> 100%, same effect as StreamingTeaser). The whole row — star
+// included — stays unmounted until its `startDelay` elapses, so the star never
+// shows ahead of its text; the row's height then animates open so the card
+// grows smoothly instead of jumping.
+function StreamRow({ as = 'li', className, before, text, speed = 18, startDelay = 0 }) {
+  const [tick, setTick] = useState(-1)
+  useEffect(() => {
+    const t = setTimeout(() => setTick(0), startDelay)
+    return () => clearTimeout(t)
+  }, [startDelay])
+  useEffect(() => {
+    if (tick < 0 || tick >= text.length + 9) return
+    const id = setTimeout(() => setTick((v) => v + 1), speed)
+    return () => clearTimeout(id)
+  }, [tick, text, speed])
+  if (tick < 0) return null
+  const MotionTag = motion[as]
+  return (
+    <MotionTag
+      className={className}
+      layout
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      transition={{ duration: 0.28, ease: 'easeOut' }}
+    >
+      {before}
+      <span>
+        {text.split('').map((ch, i) => {
+          if (i > tick) return null
+          const d = tick - i
+          const opacity = d >= 9 ? 1 : 0.1 + (0.9 * d) / 9
+          return <span key={i} style={{ opacity }}>{ch}</span>
+        })}
+      </span>
+    </MotionTag>
+  )
+}
+
 // Shared "Product at a glance" body — bullets (+ Good to know) or a spec table,
-// selected by the active content mode.
-function GlanceBody({ mode = 'Normal', checkAsset, showGoodToKnow = true }) {
+// selected by the active content mode. When streamStart is set, the final
+// `streamLastN` bullets type in one after another instead of appearing at once.
+function GlanceBody({ mode = 'Normal', checkAsset, showGoodToKnow = true, bulletAsset, streamLastN = 0, streamStart = false }) {
   const m = CONTENT_MODES[mode] || CONTENT_MODES.Normal
+  const starMarker = bulletAsset
+    ? <img className="psum-star-img" src={bulletAsset} alt="" aria-hidden width="20" height="20" />
+    : null
+  const bulletMarker = starMarker || <SumCheck src={checkAsset} />
   if (m.table) {
     return (
       <div className="psum-table">
@@ -410,7 +453,7 @@ function GlanceBody({ mode = 'Normal', checkAsset, showGoodToKnow = true }) {
       <ul className="psum-list psum-list--headsub">
         {m.items.map(([head, sub], i) => (
           <li key={i}>
-            <Sparkle />
+            {starMarker || <Sparkle />}
             <span><b className="psum-headsub-head">{head}</b>{sub}</span>
           </li>
         ))}
@@ -420,16 +463,34 @@ function GlanceBody({ mode = 'Normal', checkAsset, showGoodToKnow = true }) {
   return (
     <>
       <ul className="psum-list">
-        {m.bullets.map((b, i) => <li key={i}><SumCheck src={checkAsset} />{renderBullet(b)}</li>)}
+        {m.bullets.map((b, i) => {
+          const streamed = streamLastN > 0 && i >= m.bullets.length - streamLastN
+          if (streamed) {
+            if (!streamStart) return null
+            const plain = b.map(([t]) => t).join('')
+            const order = i - (m.bullets.length - streamLastN)
+            return <StreamRow key={i} before={bulletMarker} text={plain} startDelay={order * 620} />
+          }
+          return <li key={i}>{bulletMarker}{renderBullet(b)}</li>
+        })}
       </ul>
       {showGoodToKnow && m.goodToKnow && (
-        <div className="psum-know">
-          <p className="psum-know-h">Good to know</p>
-          <div className="psum-know-row">
-            <InfoCircle />
-            <span>{m.goodToKnow}</span>
+        streamLastN > 0 ? (
+          streamStart && (
+            <div className="psum-know">
+              <StreamRow as="p" className="psum-know-h" text="Good to know" startDelay={700} />
+              <StreamRow as="div" className="psum-know-row" before={<InfoCircle />} text={m.goodToKnow} startDelay={1150} />
+            </div>
+          )
+        ) : (
+          <div className="psum-know">
+            <p className="psum-know-h">Good to know</p>
+            <div className="psum-know-row">
+              <InfoCircle />
+              <span>{m.goodToKnow}</span>
+            </div>
           </div>
-        </div>
+        )
       )}
     </>
   )
@@ -714,8 +775,28 @@ function AskNoraFoot() {
 // of either tab.
 function DetailsTabs({ mode }) {
   const [tab, setTab] = useState('ai')
+  // Stream the last summary points in once the card is >70% in the viewport.
+  const [streamStart, setStreamStart] = useState(false)
+  const sectionRef = useRef(null)
+
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].intersectionRatio >= 0.7) {
+          setStreamStart(true)
+          io.disconnect()
+        }
+      },
+      { threshold: [0, 0.7, 1] }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
   return (
-    <section className="card details det-card">
+    <section className="card details det-card" ref={sectionRef}>
       <h3 className="section-h det-h">Product Details</h3>
       <div className="det-body">
         <div className="mswitch det-switch" role="tablist" aria-label="Product details view">
@@ -739,10 +820,7 @@ function DetailsTabs({ mode }) {
             >
               {tab === 'ai' ? (
                 <div className="det-glance">
-                  <span className={`det-glance-title${(CONTENT_MODES[mode]?.title || DEFAULT_GLANCE_TITLE) === DEFAULT_GLANCE_TITLE ? ' det-glance-title--highlight' : ''}`}>
-                    {CONTENT_MODES[mode]?.title || DEFAULT_GLANCE_TITLE}
-                  </span>
-                  <GlanceBody mode={mode} />
+                  <GlanceBody mode={mode} streamLastN={1} streamStart={streamStart} />
                 </div>
               ) : (
                 <div className="det-all">
@@ -953,23 +1031,43 @@ function DetailsAiToggle({ mode }) {
 function DetailsNoraSummary({ mode }) {
   const suggestions = ['Compare models', 'Is it worth buying?', 'Warranty']
   const [questionActive, setQuestionActive] = useState(false)
+  // Stream the last summary points in once the section is >70% in the viewport.
+  const [streamStart, setStreamStart] = useState(false)
+  const sectionRef = useRef(null)
+
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].intersectionRatio >= 0.7) {
+          setStreamStart(true)
+          io.disconnect()
+        }
+      },
+      { threshold: [0, 0.7, 1] }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
   function handleQuestionSubmit(event) {
     event.preventDefault()
   }
 
   return (
-    <section className="nora-summary">
+    <section className="nora-summary" ref={sectionRef}>
       <div className="nora-summary-head">
         <span className="nora-summary-title nora-summary-title--shimmer">Product at a glance</span>
-        <span className="nora-summary-byline">Summarised by AI</span>
+        <span className="nora-summary-byline">Summarised by nora AI</span>
       </div>
       <div className="nora-summary-content">
-        <GlanceBody mode={mode} checkAsset="/icons/nora-summary-check.svg" showGoodToKnow={false} />
+        <div className="nora-glance-card">
+          <GlanceBody mode={mode} bulletAsset="/icons/nora-summary-star.svg" showGoodToKnow={false} streamLastN={2} streamStart={streamStart} />
+        </div>
       </div>
       <div className="nora-summary-more">
         <img className="nora-summary-glow" src="/icons/nora-summary-glow.svg" alt="" aria-hidden />
-        <img className="nora-summary-divider" src="/icons/nora-summary-divider.svg" alt="" aria-hidden />
         <div className="nora-summary-more-head">
           <span>Know more with nora AI</span>
         </div>

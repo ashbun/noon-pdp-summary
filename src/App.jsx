@@ -796,7 +796,7 @@ function DetailsTabs({ mode }) {
   }, [])
 
   return (
-    <section className="card details det-card" ref={sectionRef}>
+    <section className="card details det-card det-card--tabs" ref={sectionRef}>
       <h3 className="section-h det-h">Product Details</h3>
       <div className="det-body">
         <div className="mswitch det-switch" role="tablist" aria-label="Product details view">
@@ -1063,7 +1063,13 @@ function DetailsNoraSummary({ mode }) {
       </div>
       <div className="nora-summary-content">
         <div className="nora-glance-card">
-          <GlanceBody mode={mode} bulletAsset="/icons/nora-summary-star.svg" showGoodToKnow={false} streamLastN={2} streamStart={streamStart} />
+          <GlanceBody
+            mode={mode}
+            bulletAsset="/icons/nora-summary-star.svg"
+            showGoodToKnow={false}
+            streamLastN={2}
+            streamStart={streamStart}
+          />
         </div>
       </div>
       <div className="nora-summary-more">

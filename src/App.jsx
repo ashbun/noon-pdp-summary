@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import { Retune } from 'retune'
 
@@ -148,7 +148,8 @@ function TopNav({ state = 1, onBack, center }) {
 function StatusBar({ summaryOption, onSummaryOption, contentMode, onContentMode }) {
   const toggle = (
     <div className="summary-toggle" role="group" aria-label="Product summary design">
-      {[3, 5, 2, 1, 4].map((n) => (
+      {/* Options 1, 2, 4 and 5 are parked while 3 and 6 are being compared. */}
+      {[6, 3].map((n) => (
         <button
           key={n}
           className={`summary-toggle-btn${summaryOption === n ? ' on' : ''}`}
@@ -1108,9 +1109,220 @@ function DetailsNoraSummary({ mode }) {
   )
 }
 
+/* ------------- Option 6: Product Overview with a peek-and-expand summary ------------ */
+// Figma "PDP-new-features" → Product Overview (24239:630686 collapsed,
+// 24239:630775 expanded). The AI summary is the first row of Product Overview:
+// a gradient card clipped to a partial view (~2½ lines) behind a soft fade that
+// expands on tap. When the card scrolls into view, the last two lines of that
+// partial view type in.
+const OV_COLLAPSED = 68 // clipped list height: two 20px lines + a 10px gap + an 18px sliver
+const OV_SPEED = 18     // ms per character — same cadence as StreamRow
+const OV_ROW_GAP = 260  // pause before the next row starts typing
+
+// The Figma content is the head + sub copy. The Normal content mode has no
+// heads, so option 6 keeps the head-sub rows in either mode.
+function overviewRows(mode) {
+  const m = CONTENT_MODES[mode] || {}
+  const items = m.items || CONTENT_MODES['Head-sub'].items
+  return items.map(([head, sub]) => ({ text: `${head}${sub}`, boldLen: head.length }))
+}
+
+// Every character is its own span, so the real line boxes can be measured after
+// layout: whichever characters open the last two lines of the collapsed window
+// are the ones that stream in.
+//
+// The typing itself writes span.style.opacity directly instead of re-rendering.
+// React never owns those inline styles, so they survive re-renders (expanding
+// the card) — and a tick costs ten style writes rather than a full re-render of
+// every character in the summary.
+function OverviewSummary({ mode, open, onToggle, streamStart }) {
+  const rows = overviewRows(mode)
+  const listRef = useRef(null)
+  const charsRef = useRef([])
+  const starsRef = useRef([])
+  const [plan, setPlan] = useState(null) // ordered [{ row, i }] of streamed characters
+
+  useLayoutEffect(() => {
+    const list = listRef.current
+    if (!list) return
+    // Measure with every character visible, so line boxes are the real ones.
+    charsRef.current.forEach((row) => (row || []).forEach((span) => { if (span) span.style.opacity = '' }))
+    starsRef.current.forEach((star) => { if (star) star.style.opacity = '' })
+    const listTop = list.getBoundingClientRect().top
+    const lines = []
+    charsRef.current.slice(0, rows.length).forEach((row, r) => {
+      let top = null
+      ;(row || []).forEach((span, i) => {
+        if (!span || !span.textContent.trim()) return
+        const y = Math.round(span.getBoundingClientRect().top - listTop)
+        if (top === null || y - top > 1) {
+          lines.push({ row: r, i, y })
+          top = y
+        }
+      })
+    })
+    const peek = lines.filter((l) => l.y < OV_COLLAPSED)
+    const first = peek[peek.length - 2] || peek[0]
+    const last = peek[peek.length - 1]
+    if (!first || !last) {
+      setPlan([])
+      return
+    }
+    const order = []
+    for (let r = first.row; r <= last.row; r++) {
+      for (let i = r === first.row ? first.i : 0; i < charsRef.current[r].length; i++) {
+        order.push({ row: r, i })
+      }
+    }
+    setPlan(order)
+  }, [mode])
+
+  // Characters waiting to be typed keep their space (opacity 0 via .is-typing)
+  // so nothing reflows; a row whose stream starts at its first character also
+  // holds its star back, so the marker never sits ahead of the copy.
+  const typing = useMemo(() => {
+    const chars = new Set()
+    const stars = new Set()
+    ;(plan || []).forEach((c) => {
+      chars.add(`${c.row}:${c.i}`)
+      if (c.i === 0) stars.add(c.row)
+    })
+    return { chars, stars }
+  }, [plan])
+
+  useEffect(() => {
+    if (!streamStart || !plan || !plan.length) return
+    let pos = 0
+    let timer
+    const step = () => {
+      // Reveal the head character and refresh the 9-character fade behind it.
+      for (let k = Math.max(0, pos - 9); k <= pos && k < plan.length; k++) {
+        const c = plan[k]
+        const span = charsRef.current[c.row] && charsRef.current[c.row][c.i]
+        if (!span) continue
+        const d = pos - k
+        span.style.opacity = d >= 9 ? '1' : String(0.1 + (0.9 * d) / 9)
+      }
+      const head = plan[pos]
+      if (head && head.i === 0 && starsRef.current[head.row]) {
+        starsRef.current[head.row].style.opacity = '1'
+      }
+      pos += 1
+      if (pos >= plan.length + 9) return
+      const crossesRow = plan[pos] && plan[pos - 1] && plan[pos].row !== plan[pos - 1].row
+      timer = setTimeout(step, crossesRow ? OV_ROW_GAP : OV_SPEED)
+    }
+    timer = setTimeout(step, 0)
+    return () => clearTimeout(timer)
+  }, [streamStart, plan])
+
+  return (
+    <div
+      className={`ov-sum${open ? ' is-open' : ''}`}
+      role="button"
+      tabIndex={0}
+      aria-expanded={open}
+      onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle() }
+      }}
+    >
+      <div className="ov-sum-head-row">
+        <span className="ov-sum-title">Summarised by AI</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden className={`acc-chev ov-sum-chev${open ? ' open' : ''}`}>
+          <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6"/>
+        </svg>
+      </div>
+      <motion.div
+        className="ov-sum-clip"
+        initial={false}
+        animate={{ height: open ? 'auto' : OV_COLLAPSED }}
+        transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
+      >
+        <ul className="psum-list psum-list--headsub ov-sum-list" ref={listRef}>
+          {rows.map((row, r) => {
+            if (!charsRef.current[r]) charsRef.current[r] = []
+            return (
+              <li key={r}>
+                <span
+                  className={`ov-sum-star${typing.stars.has(r) ? ' is-typing' : ''}`}
+                  ref={(el) => { starsRef.current[r] = el }}
+                >
+                  <Sparkle />
+                </span>
+                <span className="ov-sum-text">
+                  {row.text.split('').map((ch, i) => (
+                    <span
+                      key={i}
+                      ref={(el) => { charsRef.current[r][i] = el }}
+                      className={`${i < row.boldLen ? 'ov-sum-b' : ''}${typing.chars.has(`${r}:${i}`) ? ' is-typing' : ''}`}
+                    >
+                      {ch}
+                    </span>
+                  ))}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      </motion.div>
+      <AnimatePresence initial={false}>
+        {!open && (
+          <motion.span
+            className="ov-sum-fade"
+            aria-hidden
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function DetailsOverviewCollapse({ mode }) {
+  const [open, setOpen] = useState(false)
+  const [streamStart, setStreamStart] = useState(false)
+  const sectionRef = useRef(null)
+
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].intersectionRatio >= 0.7) {
+          setStreamStart(true)
+          io.disconnect()
+        }
+      },
+      { threshold: [0, 0.7, 1] }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  return (
+    <section className="card details det-card ov-card" ref={sectionRef}>
+      <h3 className="section-h det-h">Product Overview</h3>
+      <div className="det-body det-body--nofoot">
+        <OverviewSummary
+          mode={mode}
+          open={open}
+          streamStart={streamStart}
+          onToggle={() => { setStreamStart(true); setOpen((v) => !v) }}
+        />
+        <div className="det-all"><DetailAccordions /></div>
+      </div>
+    </section>
+  )
+}
+
 function ProductDetails({ summaryOption, contentMode }) {
   if (summaryOption === 3) return <DetailsTabs mode={contentMode} />
   if (summaryOption === 4) return <DetailsAiToggle mode={contentMode} />
+  if (summaryOption === 6) return <DetailsOverviewCollapse mode={contentMode} />
   return (
     <section className="card details">
       <h3 className="section-h">Product Details</h3>

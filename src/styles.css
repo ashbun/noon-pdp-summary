@@ -1012,6 +1012,43 @@ input, button, textarea, select { font-family: inherit; }
 .accordion-body { overflow: hidden; }
 .accordion-body p { margin: 0; padding: 0 14px 14px; font-size: 13px; line-height: 1.5; color: var(--ink-600); }
 
+/* --------- Option 6: Product Overview with a peek-and-expand AI summary --------- */
+.ov-sum {
+  position: relative; border-radius: 12px; overflow: hidden; padding-top: 12px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  background:
+    linear-gradient(137deg, rgba(65,70,206,.05) 2%, rgba(191,61,235,.05) 99%),
+    var(--white);
+}
+.ov-sum:focus-visible { outline: 2px solid rgba(176,109,255,.6); outline-offset: 2px; }
+.ov-sum-head-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 12px; }
+.ov-sum-title {
+  font-size: 14px; font-weight: 700; line-height: 18px; letter-spacing: -0.14px;
+  background: linear-gradient(90deg, #4146ce 0%, #bf3deb 54.54%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+.ov-sum-chev { color: var(--ink-900); }
+.ov-sum-clip { overflow: hidden; margin-top: 8px; }
+.ov-sum-list { margin: 0; padding-bottom: 12px; gap: 10px; }
+.ov-sum-list li {
+  align-items: flex-start; gap: 10px; padding: 0 12px;
+  font-size: 14px; line-height: 20px; color: var(--ink-700); letter-spacing: -0.1px;
+}
+.ov-sum-star { flex: 0 0 10px; display: flex; transition: opacity .2s ease; }
+/* Characters (and their star) wait at 0 until the typing pass writes an inline
+   opacity onto them — the space stays reserved so nothing reflows. */
+.ov-sum-text span.is-typing,
+.ov-sum-star.is-typing { opacity: 0; }
+.ov-sum-text { flex: 1 1 auto; min-width: 0; }
+.ov-sum-b { font-weight: 600; color: var(--ink-900); }
+/* Soft fade over the clipped tail of the partial view */
+.ov-sum-fade {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 24px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(252,247,254,0) 0%, rgba(252,247,254,.6) 100%);
+}
+.ov-card .det-all .accordion:last-child { margin-bottom: 0; }
+
 /* ------------------------- Additional information ------------------------- */
 .add-info { padding-bottom: 8px; }
 .info-row { background: var(--surface); margin-bottom: 8px; }
